@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 NUOVO LAYOUT - Inventory Manager</title>
+    
+    <!-- FORCE CACHE REFRESH -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <style>
+        body {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔥 NUOVO LAYOUT CARICATO!</h1>
+        <p>Se vedi questo messaggio, il layout è stato aggiornato correttamente.</p>
+        
+        <button class="test-button" onclick="testJS()">Test JavaScript</button>
+        <button class="test-button" onclick="testConsole()">Test Console</button>
+        
+        <div id="test-output"></div>
+        
+        <%- body %>
+    </div>
+    
+    <script>
+        // Test immediato
+        console.log('🔥 NUOVO LAYOUT: JavaScript caricato!');
+        
+        function testJS() {
+            alert('🔥 JavaScript funziona nel nuovo layout!');
+            document.getElementById('test-output').innerHTML = '<p style="color: green;">✅ JavaScript funziona!</p>';
+        }
+        
+        function testConsole() {
+            console.log('🔥 Test console dal nuovo layout');
+            document.getElementById('test-output').innerHTML = '<p style="color: blue;">✅ Controlla la console!</p>';
+        }
+        
+        // Test DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔥 NUOVO LAYOUT: DOM pronto');
+            document.getElementById('test-output').innerHTML = '<p style="color: orange;">🔥 Nuovo layout caricato e DOM pronto!</p>';
+        });
+    </script>
+</body>
+</html>

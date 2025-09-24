@@ -1,0 +1,1075 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Immagini - Inventory Manager</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1a202c;
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header h1 { 
+            color: #2d3748; 
+            font-size: 1.5rem; 
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .back-btn {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: #cbd5e0; }
+        
+        /* Container */
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 2rem; 
+        }
+        
+        /* Controls */
+        .controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .search-filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            min-width: 250px;
+        }
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background: white;
+            min-width: 150px;
+        }
+        
+        /* Upload Zone */
+        .upload-zone {
+            background: white;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-zone:hover {
+            border-color: #3182ce;
+            background: #f7fafc;
+        }
+        .upload-zone.dragover {
+            border-color: #3182ce;
+            background: #ebf8ff;
+            transform: scale(1.02);
+        }
+        .upload-icon {
+            font-size: 3rem;
+            color: #a0aec0;
+            margin-bottom: 1rem;
+        }
+        .upload-text {
+            font-size: 1.125rem;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+        .upload-subtext {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        .file-input {
+            display: none;
+        }
+        
+        /* Upload Progress */
+        .upload-progress {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: none;
+        }
+        .progress-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .progress-item:last-child {
+            border-bottom: none;
+        }
+        .progress-thumbnail {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            object-fit: cover;
+            background: #f7fafc;
+        }
+        .progress-info {
+            flex: 1;
+        }
+        .progress-name {
+            font-weight: 500;
+            color: #2d3748;
+        }
+        .progress-size {
+            font-size: 0.75rem;
+            color: #718096;
+        }
+        .progress-bar {
+            width: 100px;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #3182ce;
+            transition: width 0.3s ease;
+        }
+        
+        /* Images Grid */
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .image-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f7fafc;
+        }
+        .image-info {
+            padding: 1rem;
+        }
+        .image-filename {
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+        }
+        .image-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+        }
+        .image-product {
+            font-size: 0.875rem;
+            color: #4a5568;
+            margin-bottom: 1rem;
+        }
+        .image-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: #3182ce;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #2c5282; transform: translateY(-1px); }
+        .btn-success { background: #38a169; }
+        .btn-success:hover { background: #2f855a; }
+        .btn-danger { background: #e53e3e; }
+        .btn-danger:hover { background: #c53030; }
+        .btn-outline {
+            background: transparent;
+            color: #3182ce;
+            border: 1px solid #3182ce;
+        }
+        .btn-outline:hover {
+            background: #3182ce;
+            color: white;
+        }
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #718096;
+            padding: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:hover { color: #2d3748; }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #2d3748;
+            font-size: 0.875rem;
+        }
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        /* Loading and empty states */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+        }
+        .empty-state h3 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+        }
+        .pagination-info {
+            color: #718096;
+            font-size: 0.875rem;
+        }
+        
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 2000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background: #38a169;
+        }
+        .notification.error {
+            background: #e53e3e;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-filters {
+                flex-direction: column;
+                width: 100%;
+            }
+            .search-input, .filter-select {
+                min-width: auto;
+                width: 100%;
+            }
+            .images-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 1rem;
+            }
+            .modal-content {
+                margin: 1rem;
+                width: calc(100% - 2rem);
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .upload-zone {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <h1>🖼️ Gestione Immagini</h1>
+            <a href="/dashboard-new" class="back-btn">← Dashboard</a>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-filters">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    placeholder="Cerca immagini..." 
+                    id="searchInput"
+                    onkeyup="handleSearch()"
+                >
+                <select class="filter-select" id="productFilter" onchange="handleFilter()">
+                    <option value="">Tutti i prodotti</option>
+                </select>
+                <select class="filter-select" id="variantFilter" onchange="handleFilter()">
+                    <option value="">Tutte le varianti</option>
+                </select>
+            </div>
+            <button class="btn" onclick="triggerFileUpload()">
+                📤 Carica Immagini
+            </button>
+        </div>
+        
+        <!-- Upload Zone -->
+        <div class="upload-zone" id="uploadZone" onclick="triggerFileUpload()">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Trascina le immagini qui o clicca per selezionare</div>
+            <div class="upload-subtext">Supportati: JPG, PNG, GIF, WEBP (max 5MB per file)</div>
+            <input 
+                type="file" 
+                class="file-input" 
+                id="fileInput" 
+                multiple 
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onchange="handleFileSelect(event)"
+            >
+        </div>
+        
+        <!-- Upload Progress -->
+        <div class="upload-progress" id="uploadProgress">
+            <h3 style="margin-bottom: 1rem;">Upload in corso...</h3>
+            <div id="progressList"></div>
+        </div>
+        
+        <!-- Images Grid -->
+        <div class="images-grid" id="imagesGrid">
+            <div class="loading">
+                Caricamento immagini...
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination">
+            <button class="btn btn-outline btn-sm" id="prevBtn" onclick="previousPage()" disabled>
+                ← Precedente
+            </button>
+            <span class="pagination-info" id="paginationInfo">
+                Pagina 1 di 1
+            </span>
+            <button class="btn btn-outline btn-sm" id="nextBtn" onclick="nextPage()" disabled>
+                Successivo →
+            </button>
+        </div>
+    </div>
+    
+    <!-- Edit Image Modal -->
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Modifica Immagine</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <form id="imageForm" onsubmit="handleImageUpdate(event)">
+                <div class="form-group">
+                    <img id="modalImagePreview" style="width: 100%; max-height: 300px; object-fit: contain; border-radius: 6px; margin-bottom: 1rem;">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="imageAltText">Testo Alternativo</label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        id="imageAltText" 
+                        name="alt_text"
+                        placeholder="Descrizione dell'immagine..."
+                    >
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="imageProduct">Prodotto</label>
+                        <select class="form-select" id="imageProduct" name="product_id" onchange="loadVariantsForProduct()">
+                            <option value="">Seleziona prodotto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="imageVariant">Variante</label>
+                        <select class="form-select" id="imageVariant" name="variant_id">
+                            <option value="">Nessuna variante specifica</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="imagePosition">Posizione</label>
+                    <input 
+                        type="number" 
+                        class="form-input" 
+                        id="imagePosition" 
+                        name="position"
+                        min="1"
+                        placeholder="1"
+                    >
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">
+                        Annulla
+                    </button>
+                    <button type="submit" class="btn" id="submitBtn">
+                        Salva Modifiche
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        console.log('🖼️ Images JavaScript loaded!');
+        
+        // Global state
+        let images = [];
+        let products = [];
+        let variants = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentImage = null;
+        let searchTerm = '';
+        let productFilter = '';
+        let variantFilter = '';
+        
+        // API functions
+        async function loadImages() {
+            try {
+                console.log('🖼️ Loading images...');
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: 12
+                });
+                
+                if (searchTerm) params.append('search', searchTerm);
+                if (productFilter) params.append('product_id', productFilter);
+                if (variantFilter) params.append('variant_id', variantFilter);
+                
+                const response = await fetch(`/api/images?${params}`);
+                if (!response.ok) throw new Error('Failed to load images');
+                
+                const data = await response.json();
+                images = data.data || [];
+                
+                renderImages();
+                updatePagination();
+                
+                console.log('✅ Images loaded:', images.length);
+            } catch (error) {
+                console.error('❌ Error loading images:', error);
+                showError('Errore nel caricamento delle immagini');
+            }
+        }
+        
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/products');
+                if (!response.ok) throw new Error('Failed to load products');
+                
+                const data = await response.json();
+                products = data.data || [];
+                
+                // Populate product dropdowns
+                const productSelect = document.getElementById('imageProduct');
+                const productFilter = document.getElementById('productFilter');
+                
+                productSelect.innerHTML = '<option value="">Seleziona prodotto</option>';
+                productFilter.innerHTML = '<option value="">Tutti i prodotti</option>';
+                
+                products.forEach(product => {
+                    productSelect.innerHTML += `<option value="${product.id}">${product.title}</option>`;
+                    productFilter.innerHTML += `<option value="${product.id}">${product.title}</option>`;
+                });
+                
+                console.log('✅ Products loaded:', products.length);
+            } catch (error) {
+                console.error('❌ Error loading products:', error);
+            }
+        }
+        
+        async function loadVariantsForProduct() {
+            const productId = document.getElementById('imageProduct').value;
+            const variantSelect = document.getElementById('imageVariant');
+            
+            variantSelect.innerHTML = '<option value="">Nessuna variante specifica</option>';
+            
+            if (!productId) return;
+            
+            try {
+                const response = await fetch(`/api/variants?product_id=${productId}`);
+                if (!response.ok) throw new Error('Failed to load variants');
+                
+                const data = await response.json();
+                const variants = data.data || [];
+                
+                variants.forEach(variant => {
+                    const label = variant.sku ? `${variant.sku}` : `Variante ${variant.id}`;
+                    variantSelect.innerHTML += `<option value="${variant.id}">${label}</option>`;
+                });
+                
+            } catch (error) {
+                console.error('❌ Error loading variants:', error);
+            }
+        }
+        
+        // File upload functions
+        function triggerFileUpload() {
+            document.getElementById('fileInput').click();
+        }
+        
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            if (files.length > 0) {
+                uploadFiles(files);
+            }
+        }
+        
+        async function uploadFiles(files) {
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressList = document.getElementById('progressList');
+            
+            progressContainer.style.display = 'block';
+            progressList.innerHTML = '';
+            
+            // Show progress items
+            files.forEach((file, index) => {
+                const progressItem = createProgressItem(file, index);
+                progressList.appendChild(progressItem);
+            });
+            
+            // Upload files one by one
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                try {
+                    await uploadSingleFile(file, i);
+                    updateProgressItem(i, 100, 'success');
+                } catch (error) {
+                    console.error(`❌ Error uploading ${file.name}:`, error);
+                    updateProgressItem(i, 0, 'error');
+                }
+            }
+            
+            // Hide progress after delay
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                loadImages(); // Reload images
+            }, 2000);
+        }
+        
+        function createProgressItem(file, index) {
+            const item = document.createElement('div');
+            item.className = 'progress-item';
+            item.id = `progress-${index}`;
+            
+            // Create thumbnail
+            const thumbnail = document.createElement('img');
+            thumbnail.className = 'progress-thumbnail';
+            thumbnail.src = URL.createObjectURL(file);
+            
+            const info = document.createElement('div');
+            info.className = 'progress-info';
+            info.innerHTML = `
+                <div class="progress-name">${file.name}</div>
+                <div class="progress-size">${formatFileSize(file.size)}</div>
+            `;
+            
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar';
+            progressBar.innerHTML = '<div class="progress-fill" style="width: 0%"></div>';
+            
+            item.appendChild(thumbnail);
+            item.appendChild(info);
+            item.appendChild(progressBar);
+            
+            return item;
+        }
+        
+        function updateProgressItem(index, progress, status) {
+            const item = document.getElementById(`progress-${index}`);
+            if (!item) return;
+            
+            const fill = item.querySelector('.progress-fill');
+            fill.style.width = `${progress}%`;
+            
+            if (status === 'success') {
+                fill.style.background = '#38a169';
+            } else if (status === 'error') {
+                fill.style.background = '#e53e3e';
+            }
+        }
+        
+        async function uploadSingleFile(file, index) {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            // Use first available product or create a default association
+            if (products.length > 0) {
+                formData.append('product_id', products[0].id);
+            } else {
+                // If no products exist, we need to handle this case
+                throw new Error('Nessun prodotto disponibile. Crea prima un prodotto.');
+            }
+            
+            const response = await fetch('/api/images/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Upload failed');
+            }
+            
+            return response.json();
+        }
+        
+        // Render functions
+        function renderImages() {
+            const grid = document.getElementById('imagesGrid');
+            
+            if (images.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <h3>Nessuna immagine trovata</h3>
+                        <p>Carica le tue prime immagini usando il pulsante sopra</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = images.map(image => {
+                const productName = image.product?.title || 'Prodotto sconosciuto';
+                const variantInfo = image.variant ? ` - ${image.variant.sku}` : '';
+                const fileSize = image.size ? formatFileSize(image.size) : '';
+                
+                return `
+                    <div class="image-card">
+                        <img 
+                            src="${image.src}" 
+                            alt="${image.alt_text || image.filename}" 
+                            class="image-preview"
+                            onerror="this.src='/uploads/placeholder.jpg'"
+                        >
+                        <div class="image-info">
+                            <div class="image-filename">${image.filename || 'Immagine'}</div>
+                            <div class="image-meta">
+                                <span>${fileSize}</span>
+                                <span>Pos. ${image.position}</span>
+                            </div>
+                            <div class="image-product">${productName}${variantInfo}</div>
+                            <div class="image-actions">
+                                <button class="btn btn-outline btn-sm" onclick="editImage(${image.id})">
+                                    ✏️ Modifica
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteImage(${image.id})">
+                                    🗑️ Elimina
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function updatePagination() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const paginationInfo = document.getElementById('paginationInfo');
+            
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+            
+            paginationInfo.textContent = `Pagina ${currentPage} di ${totalPages}`;
+        }
+        
+        // Modal functions
+        async function editImage(id) {
+            try {
+                console.log('🖼️ Loading image for edit:', id);
+                const response = await fetch(`/api/images/${id}`);
+                if (!response.ok) throw new Error('Failed to load image');
+                
+                const result = await response.json();
+                currentImage = result.data;
+                
+                // Populate form
+                document.getElementById('modalTitle').textContent = 'Modifica Immagine';
+                document.getElementById('modalImagePreview').src = currentImage.src;
+                document.getElementById('imageAltText').value = currentImage.alt_text || '';
+                document.getElementById('imageProduct').value = currentImage.product_id || '';
+                document.getElementById('imageVariant').value = currentImage.variant_id || '';
+                document.getElementById('imagePosition').value = currentImage.position || 1;
+                
+                // Load variants for selected product
+                if (currentImage.product_id) {
+                    await loadVariantsForProduct();
+                    document.getElementById('imageVariant').value = currentImage.variant_id || '';
+                }
+                
+                document.getElementById('imageModal').classList.add('show');
+                
+                console.log('✅ Image loaded for edit:', currentImage);
+            } catch (error) {
+                console.error('❌ Error loading image:', error);
+                showError('Errore nel caricamento dell\'immagine');
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('show');
+            currentImage = null;
+        }
+        
+        async function handleImageUpdate(event) {
+            event.preventDefault();
+            
+            if (!currentImage) return;
+            
+            try {
+                const formData = new FormData(event.target);
+                const imageData = {
+                    product_id: parseInt(formData.get('product_id')) || currentImage.product_id,
+                    variant_id: formData.get('variant_id') ? parseInt(formData.get('variant_id')) : null,
+                    alt_text: formData.get('alt_text') || '',
+                    position: parseInt(formData.get('position')) || 1
+                };
+                
+                const response = await fetch(`/api/images/${currentImage.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(imageData)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to update image');
+                }
+                
+                const result = await response.json();
+                console.log('✅ Image updated:', result.data);
+                
+                closeModal();
+                loadImages();
+                showSuccess('Immagine aggiornata con successo!');
+                
+            } catch (error) {
+                console.error('❌ Error updating image:', error);
+                showError(error.message);
+            }
+        }
+        
+        async function deleteImage(id) {
+            if (!confirm('Sei sicuro di voler eliminare questa immagine?')) return;
+            
+            try {
+                console.log('🖼️ Deleting image:', id);
+                const response = await fetch(`/api/images/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to delete image');
+                }
+                
+                console.log('✅ Image deleted');
+                loadImages();
+                showSuccess('Immagine eliminata con successo!');
+            } catch (error) {
+                console.error('❌ Error deleting image:', error);
+                showError(error.message);
+            }
+        }
+        
+        // Search and filter functions
+        function handleSearch() {
+            searchTerm = document.getElementById('searchInput').value;
+            currentPage = 1;
+            loadImages();
+        }
+        
+        function handleFilter() {
+            productFilter = document.getElementById('productFilter').value;
+            variantFilter = document.getElementById('variantFilter').value;
+            currentPage = 1;
+            loadImages();
+        }
+        
+        // Pagination functions
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadImages();
+            }
+        }
+        
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadImages();
+            }
+        }
+        
+        // Drag and drop functions
+        function setupDragAndDrop() {
+            const uploadZone = document.getElementById('uploadZone');
+            
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            
+            uploadZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+            });
+            
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                
+                const files = Array.from(e.dataTransfer.files);
+                const imageFiles = files.filter(file => file.type.startsWith('image/'));
+                
+                if (imageFiles.length > 0) {
+                    uploadFiles(imageFiles);
+                } else {
+                    showError('Seleziona solo file immagine');
+                }
+            });
+        }
+        
+        // Notification functions
+        function showSuccess(message) {
+            showNotification(message, 'success');
+        }
+        
+        function showError(message) {
+            showNotification(message, 'error');
+        }
+        
+        function showNotification(message, type) {
+            // Remove existing notifications
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            // Hide notification after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🖼️ Images page initialized');
+            
+            // Load initial data
+            loadProducts();
+            loadImages();
+            
+            // Setup drag and drop
+            setupDragAndDrop();
+            
+            // Close modal when clicking outside
+            document.getElementById('imageModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            
+            // Handle escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        });
+        
+        // Debounce search
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(handleSearch, 300);
+        });
+    </script>
+</body>
+</html>

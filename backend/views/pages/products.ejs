@@ -1,0 +1,394 @@
+<div class="space-y-6" id="products-page">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Gestione Prodotti</h1>
+      <p class="mt-1 text-sm text-gray-500">
+        Gestisci i tuoi prodotti, varianti e opzioni
+      </p>
+    </div>
+    <button id="add-product-btn" class="btn btn-primary" onclick="openCreateModal()">
+      <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      </svg>
+      Nuovo Prodotto
+    </button>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="card">
+    <div class="card-body">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <!-- Search -->
+        <div class="flex-1">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              id="searchInput"
+              class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Cerca prodotti..."
+              onkeyup="handleSearch()"
+            />
+          </div>
+        </div>
+        
+        <!-- Status Filter -->
+        <div class="sm:w-48">
+          <select id="statusFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500" onchange="handleFilter()">
+            <option value="">Tutti gli stati</option>
+            <option value="active">Attivi</option>
+            <option value="draft">Bozze</option>
+            <option value="archived">Archiviati</option>
+          </select>
+        </div>
+
+        <!-- Category Filter -->
+        <div class="sm:w-48">
+          <select id="categoryFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500" onchange="handleFilter()">
+            <option value="">Tutte le categorie</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Products Table -->
+  <div class="card">
+    <div class="card-body">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Prodotto
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Categoria
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Varianti
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Stato
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Creato
+              </th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Azioni
+              </th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody" class="bg-white divide-y divide-gray-200">
+            <!-- Products will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Loading State -->
+      <div id="loadingState" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <p class="mt-2 text-gray-500">Caricamento prodotti...</p>
+      </div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="text-center py-8" style="display: none;">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">Nessun prodotto</h3>
+        <p class="mt-1 text-sm text-gray-500">Inizia creando il tuo primo prodotto.</p>
+        <div class="mt-6">
+          <button type="button" class="btn btn-primary" onclick="openCreateModal()">
+            <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Nuovo Prodotto
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex items-center justify-between">
+    <div class="flex-1 flex justify-between sm:hidden">
+      <button id="prevBtnMobile" class="btn btn-outline" onclick="previousPage()">Precedente</button>
+      <button id="nextBtnMobile" class="btn btn-outline" onclick="nextPage()">Successivo</button>
+    </div>
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-gray-700" id="paginationInfo">
+          Caricamento...
+        </p>
+      </div>
+      <div>
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+          <button id="prevBtn" class="btn btn-outline rounded-r-none" onclick="previousPage()">
+            Precedente
+          </button>
+          <button id="nextBtn" class="btn btn-outline rounded-l-none" onclick="nextPage()">
+            Successivo
+          </button>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include the products-new modal and functionality -->
+<div id="productModalContainer"></div>
+
+<script>
+// Load the products-new content into the modal container
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await fetch('/products-new');
+        const html = await response.text();
+        
+        // Extract just the modal part from products-new
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const modal = doc.querySelector('#productModal');
+        const scripts = doc.querySelectorAll('script');
+        
+        if (modal) {
+            document.getElementById('productModalContainer').appendChild(modal);
+            
+            // Add the scripts
+            scripts.forEach(script => {
+                const newScript = document.createElement('script');
+                if (script.src) {
+                    newScript.src = script.src;
+                } else {
+                    newScript.textContent = script.textContent;
+                }
+                document.head.appendChild(newScript);
+            });
+        }
+        
+        // Initialize the products page
+        initProductsPage();
+        
+    } catch (error) {
+        console.error('Error loading product modal:', error);
+        // Fallback: redirect to products-new for now
+        window.location.href = '/products-new';
+    }
+});
+
+// Products page functionality
+let currentPage = 1;
+let totalPages = 1;
+let searchTerm = '';
+let statusFilter = '';
+let categoryFilter = '';
+
+async function initProductsPage() {
+    await loadCategories();
+    await loadProducts();
+}
+
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/categories');
+        const result = await response.json();
+        
+        if (result.success) {
+            const categorySelect = document.getElementById('categoryFilter');
+            categorySelect.innerHTML = '<option value="">Tutte le categorie</option>';
+            
+            result.data.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+    }
+}
+
+async function loadProducts() {
+    try {
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'none';
+        
+        const params = new URLSearchParams({
+            page: currentPage,
+            limit: 10,
+            search: searchTerm,
+            status: statusFilter,
+            category_id: categoryFilter
+        });
+        
+        const response = await fetch(`/api/products?${params}`);
+        const result = await response.json();
+        
+        document.getElementById('loadingState').style.display = 'none';
+        
+        if (result.success && result.data.length > 0) {
+            displayProducts(result.data);
+            updatePagination(result.pagination);
+        } else {
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('productsTableBody').innerHTML = '';
+        }
+        
+    } catch (error) {
+        console.error('Error loading products:', error);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+    }
+}
+
+function displayProducts(products) {
+    const tbody = document.getElementById('productsTableBody');
+    tbody.innerHTML = products.map(product => `
+        <tr>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                        <div class="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                            <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">${product.title}</div>
+                        <div class="text-sm text-gray-500">${product.vendor || 'N/A'}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">${product.category?.name || 'N/A'}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    ${product.variants?.length || 0} varianti
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(product.status)}">
+                    ${getStatusText(product.status)}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                ${new Date(product.created_at).toLocaleDateString('it-IT')}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <a href="/products/${product.id}" class="text-blue-600 hover:text-blue-900 mr-3">
+                    Visualizza
+                </a>
+                <button onclick="editProduct(${product.id})" class="text-primary-600 hover:text-primary-900 mr-3">
+                    Modifica
+                </button>
+                <button onclick="deleteProduct(${product.id})" class="text-red-600 hover:text-red-900">
+                    Elimina
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function getStatusClass(status) {
+    switch (status) {
+        case 'active': return 'bg-green-100 text-green-800';
+        case 'draft': return 'bg-yellow-100 text-yellow-800';
+        case 'archived': return 'bg-gray-100 text-gray-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+}
+
+function getStatusText(status) {
+    switch (status) {
+        case 'active': return 'Attivo';
+        case 'draft': return 'Bozza';
+        case 'archived': return 'Archiviato';
+        default: return status;
+    }
+}
+
+function updatePagination(pagination) {
+    if (!pagination) return;
+    
+    currentPage = pagination.currentPage;
+    totalPages = pagination.totalPages;
+    
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const paginationInfo = document.getElementById('paginationInfo');
+    
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= totalPages;
+    
+    paginationInfo.textContent = `Pagina ${currentPage} di ${totalPages}`;
+}
+
+function handleSearch() {
+    searchTerm = document.getElementById('searchInput').value;
+    currentPage = 1;
+    loadProducts();
+}
+
+function handleFilter() {
+    statusFilter = document.getElementById('statusFilter').value;
+    categoryFilter = document.getElementById('categoryFilter').value;
+    currentPage = 1;
+    loadProducts();
+}
+
+function previousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        loadProducts();
+    }
+}
+
+function nextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadProducts();
+    }
+}
+
+async function deleteProduct(id) {
+    if (!confirm('Sei sicuro di voler eliminare questo prodotto?')) return;
+    
+    try {
+        const response = await fetch(`/api/products/${id}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccess('Prodotto eliminato con successo');
+            loadProducts();
+        } else {
+            showError(result.error || 'Errore nell\'eliminazione del prodotto');
+        }
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        showError('Errore nell\'eliminazione del prodotto');
+    }
+}
+
+// Utility functions (these should be defined in the included scripts)
+function showSuccess(message) {
+    // Implementation depends on your notification system
+    console.log('Success:', message);
+}
+
+function showError(message) {
+    // Implementation depends on your notification system
+    console.error('Error:', message);
+}
+</script>

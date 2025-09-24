@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test VariantsManager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .test-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test VariantsManager - Pulsante "Aggiungi Opzione"</h1>
+        
+        <div class="test-info">
+            <strong>Obiettivo:</strong> Testare il funzionamento del pulsante "Aggiungi Opzione" del VariantsManager.<br>
+            <strong>Versione:</strong> 20250924171200 - ADDOPTION WORKING<br>
+            <strong>Stato:</strong> Test in corso...
+        </div>
+
+        <!-- VariantsManager Container -->
+        <div id="variantsManagerContainer">
+            <!-- Variants Manager will be rendered here -->
+        </div>
+    </div>
+
+    <!-- Include VariantsManager -->
+    <script src="/js/components/variants-manager.js?v=20250924172800"></script>
+    
+    <script>
+        console.log('🧪 Test VariantsManager page loaded!');
+        
+        // Initialize VariantsManager
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 DOM ready, initializing VariantsManager...');
+            
+            const container = document.getElementById('variantsManagerContainer');
+            if (container) {
+                console.log('🧪 Container found, creating VariantsManager...');
+                
+                // Create VariantsManager instance
+                window.variantsManager = new VariantsManager(container);
+                
+                // Enable offline mode for testing
+                window.variantsManager.enableOfflineMode();
+                
+                console.log('🧪 VariantsManager initialized successfully!');
+                
+                // Add test button click listener
+                setTimeout(() => {
+                    const addBtn = document.getElementById('addOptionBtn');
+                    if (addBtn) {
+                        console.log('🧪 Found addOptionBtn, adding test listener...');
+                        addBtn.addEventListener('click', function() {
+                            console.log('🧪 TEST: addOptionBtn clicked!');
+                        });
+                    } else {
+                        console.error('🧪 ERROR: addOptionBtn not found!');
+                    }
+                }, 1000);
+                
+            } else {
+                console.error('🧪 ERROR: variantsManagerContainer not found!');
+            }
+        });
+    </script>
+</body>
+</html>

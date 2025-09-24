@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Inventory Manager</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/variants-manager.css">
+    <style>
+        .product-detail-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .product-header {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .product-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .product-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .meta-label {
+            font-size: 0.875rem;
+            color: #718096;
+            font-weight: 500;
+        }
+        
+        .meta-value {
+            font-size: 1rem;
+            color: #2d3748;
+            margin-top: 0.25rem;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .status-active { background: #c6f6d5; color: #22543d; }
+        .status-draft { background: #fed7d7; color: #742a2a; }
+        .status-archived { background: #e2e8f0; color: #4a5568; }
+        
+        .product-section {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .variants-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .variant-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1.5rem;
+            background: #f7fafc;
+        }
+        
+        .variant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .variant-title {
+            font-weight: 500;
+            color: #2d3748;
+        }
+        
+        .variant-price {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #38a169;
+        }
+        
+        .variant-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .option-tag {
+            background: #edf2f7;
+            color: #4a5568;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .variant-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            font-size: 0.75rem;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-value {
+            font-size: 0.875rem;
+            color: #2d3748;
+            font-weight: 500;
+        }
+        
+        .options-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .option-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1.5rem;
+            background: #f7fafc;
+        }
+        
+        .option-name {
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .option-values {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .option-value {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.2s;
+            margin-bottom: 2rem;
+        }
+        
+        .back-button:hover {
+            background: #cbd5e0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 3rem;
+            color: #e53e3e;
+            background: #fed7d7;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="product-detail-container">
+        <a href="/products-new" class="back-button">
+            ← Torna ai Prodotti
+        </a>
+        
+        <div id="loadingState" class="loading-state">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <p class="mt-2">Caricamento prodotto...</p>
+        </div>
+        
+        <div id="errorState" class="error-state" style="display: none;">
+            <h3>Errore nel caricamento</h3>
+            <p id="errorMessage">Si è verificato un errore nel caricamento del prodotto.</p>
+        </div>
+        
+        <div id="productContent" style="display: none;">
+            <!-- Product Header -->
+            <div class="product-header">
+                <h1 class="product-title" id="productTitle">-</h1>
+                <p id="productDescription" class="text-gray-600 mt-2"></p>
+                
+                <div class="product-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Stato</span>
+                        <span class="meta-value">
+                            <span id="productStatus" class="status-badge">-</span>
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Categoria</span>
+                        <span class="meta-value" id="productCategory">-</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Vendor</span>
+                        <span class="meta-value" id="productVendor">-</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Tipo</span>
+                        <span class="meta-value" id="productType">-</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Tags</span>
+                        <span class="meta-value" id="productTags">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product Options -->
+            <div class="product-section" id="optionsSection">
+                <h2 class="section-title">
+                    📋 Opzioni Prodotto
+                </h2>
+                <div id="optionsList" class="options-grid">
+                    <!-- Options will be rendered here -->
+                </div>
+            </div>
+            
+            <!-- Product Variants -->
+            <div class="product-section" id="variantsSection">
+                <h2 class="section-title">
+                    📦 Varianti Prodotto
+                    <span id="variantsCount" class="text-sm text-gray-500 font-normal">-</span>
+                </h2>
+                <div id="variantsList" class="variants-grid">
+                    <!-- Variants will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const productId = '<%= productId %>';
+        let product = null;
+        
+        // Load product data
+        async function loadProduct() {
+            try {
+                console.log('🔍 Loading product:', productId);
+                
+                const response = await fetch(`/api/products/${productId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to load product');
+                }
+                
+                product = result.data;
+                console.log('✅ Product loaded:', product);
+                
+                renderProduct();
+                
+            } catch (error) {
+                console.error('❌ Error loading product:', error);
+                showError(error.message);
+            }
+        }
+        
+        function renderProduct() {
+            // Hide loading, show content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('productContent').style.display = 'block';
+            
+            // Basic product info
+            document.getElementById('productTitle').textContent = product.title || 'Prodotto Senza Nome';
+            document.getElementById('productDescription').textContent = product.description || '';
+            
+            // Status
+            const statusElement = document.getElementById('productStatus');
+            statusElement.textContent = getStatusLabel(product.status);
+            statusElement.className = `status-badge status-${product.status}`;
+            
+            // Meta info
+            document.getElementById('productCategory').textContent = product.category?.name || 'Nessuna categoria';
+            document.getElementById('productVendor').textContent = product.vendor || 'N/A';
+            document.getElementById('productType').textContent = product.product_type || 'N/A';
+            document.getElementById('productTags').textContent = product.tags || 'Nessun tag';
+            
+            // Render options
+            renderOptions();
+            
+            // Render variants
+            renderVariants();
+        }
+        
+        function renderOptions() {
+            const optionsList = document.getElementById('optionsList');
+            const options = product.options || [];
+            
+            if (options.length === 0) {
+                optionsList.innerHTML = `
+                    <div class="empty-state">
+                        <p>Nessuna opzione definita per questo prodotto.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            optionsList.innerHTML = options.map(option => `
+                <div class="option-card">
+                    <div class="option-name">${option.name}</div>
+                    <div class="option-values">
+                        ${option.values.map(value => `
+                            <span class="option-value">${value}</span>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function renderVariants() {
+            const variantsList = document.getElementById('variantsList');
+            const variantsCount = document.getElementById('variantsCount');
+            const variants = product.variants || [];
+            
+            variantsCount.textContent = `(${variants.length} varianti)`;
+            
+            if (variants.length === 0) {
+                variantsList.innerHTML = `
+                    <div class="empty-state">
+                        <p>Nessuna variante creata per questo prodotto.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            variantsList.innerHTML = variants.map((variant, index) => `
+                <div class="variant-card">
+                    <div class="variant-header">
+                        <div class="variant-title">Variante ${index + 1}</div>
+                        <div class="variant-price">€${parseFloat(variant.price || 0).toFixed(2)}</div>
+                    </div>
+                    
+                    ${variant.selectedOptions && variant.selectedOptions.length > 0 ? `
+                        <div class="variant-options">
+                            ${variant.selectedOptions.map(option => `
+                                <span class="option-tag">${option.name}: ${option.value}</span>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="variant-details">
+                        <div class="detail-item">
+                            <span class="detail-label">SKU</span>
+                            <span class="detail-value">${variant.sku || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Inventario</span>
+                            <span class="detail-value">${variant.inventory_quantity || 0}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Barcode</span>
+                            <span class="detail-value">${variant.barcode || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Peso</span>
+                            <span class="detail-value">${variant.weight ? `${variant.weight} ${variant.weight_unit || 'kg'}` : 'N/A'}</span>
+                        </div>
+                        ${variant.compare_at_price ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Prezzo Confronto</span>
+                                <span class="detail-value">€${parseFloat(variant.compare_at_price).toFixed(2)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function getStatusLabel(status) {
+            const labels = {
+                'active': 'Attivo',
+                'draft': 'Bozza',
+                'archived': 'Archiviato'
+            };
+            return labels[status] || status;
+        }
+        
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Product detail page initialized');
+            loadProduct();
+        });
+    </script>
+</body>
+</html>

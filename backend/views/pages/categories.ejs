@@ -1,0 +1,281 @@
+<div class="space-y-6" id="categories-page">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Gestione Categorie</h1>
+      <p class="mt-1 text-sm text-gray-500">
+        Gestisci le categorie dei tuoi prodotti e i loro campi personalizzati
+      </p>
+    </div>
+    <button id="add-category-btn" class="btn btn-primary">
+      <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      </svg>
+      Nuova Categoria
+    </button>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="card">
+    <div class="card-body">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <!-- Search -->
+        <div class="flex-1">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              id="search-input"
+              class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Cerca categorie..."
+            />
+          </div>
+        </div>
+        
+        <!-- Status Filter -->
+        <div class="sm:w-48">
+          <select id="status-filter" class="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
+            <option value="">Tutti gli stati</option>
+            <option value="active">Attive</option>
+            <option value="inactive">Inattive</option>
+          </select>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="sm:w-48">
+          <select id="bulk-actions" class="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500" disabled>
+            <option value="">Azioni multiple</option>
+            <option value="activate">Attiva selezionate</option>
+            <option value="deactivate">Disattiva selezionate</option>
+            <option value="delete">Elimina selezionate</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="categories-loading" class="flex items-center justify-center h-64" style="display: none;">
+    <div class="spinner"></div>
+    <span class="ml-2 text-gray-600">Caricamento categorie...</span>
+  </div>
+
+  <!-- Categories Table -->
+  <div class="card" id="categories-table-container">
+    <div class="card-body p-0">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left">
+                <input type="checkbox" id="select-all" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" data-sort="name">
+                Nome
+                <svg class="w-4 h-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Descrizione
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tipo Shopify
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Campi Custom
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" data-sort="status">
+                Stato
+                <svg class="w-4 h-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Azioni
+              </th>
+            </tr>
+          </thead>
+          <tbody id="categories-tbody" class="bg-white divide-y divide-gray-200">
+            <!-- Categories will be populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="categories-empty" class="card" style="display: none;">
+    <div class="card-body text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">Nessuna categoria trovata</h3>
+      <p class="mt-1 text-sm text-gray-500">Inizia creando la tua prima categoria per organizzare i prodotti.</p>
+      <div class="mt-6">
+        <button id="add-category-empty-btn" class="btn btn-primary">
+          <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Crea Prima Categoria
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div id="categories-pagination" class="flex items-center justify-between">
+    <div class="flex-1 flex justify-between sm:hidden">
+      <button id="prev-mobile" class="btn btn-outline" disabled>Precedente</button>
+      <button id="next-mobile" class="btn btn-outline" disabled>Successivo</button>
+    </div>
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-gray-700">
+          Mostrando <span id="showing-from">0</span> - <span id="showing-to">0</span> di <span id="total-items">0</span> risultati
+        </p>
+      </div>
+      <div>
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" id="pagination-nav">
+          <!-- Pagination buttons will be generated by JavaScript -->
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div id="category-modal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+    
+    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+      <form id="category-form">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+              <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                Nuova Categoria
+              </h3>
+              <div class="mt-4 space-y-4">
+                <!-- Name -->
+                <div>
+                  <label for="category-name" class="block text-sm font-medium text-gray-700">Nome *</label>
+                  <input
+                    type="text"
+                    id="category-name"
+                    name="name"
+                    required
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Nome della categoria"
+                  />
+                  <div class="form-error-message"></div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                  <label for="category-description" class="block text-sm font-medium text-gray-700">Descrizione</label>
+                  <textarea
+                    id="category-description"
+                    name="description"
+                    rows="3"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Descrizione della categoria (opzionale)"
+                  ></textarea>
+                </div>
+
+                <!-- Shopify Product Type -->
+                <div>
+                  <label for="category-shopify-type" class="block text-sm font-medium text-gray-700">Tipo Prodotto Shopify</label>
+                  <input
+                    type="text"
+                    id="category-shopify-type"
+                    name="shopify_product_type"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="es. Abbigliamento, Elettronica, ecc."
+                  />
+                </div>
+
+                <!-- Status -->
+                <div>
+                  <label for="category-status" class="block text-sm font-medium text-gray-700">Stato</label>
+                  <select
+                    id="category-status"
+                    name="status"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="active">Attiva</option>
+                    <option value="inactive">Inattiva</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <button
+            type="submit"
+            id="save-category-btn"
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            Salva
+          </button>
+          <button
+            type="button"
+            id="cancel-category-btn"
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            Annulla
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Fields Modal -->
+<div id="fields-modal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+    
+    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="sm:flex sm:items-start">
+          <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="fields-modal-title">
+              Gestisci Campi Personalizzati
+            </h3>
+            <div class="mt-4">
+              <div class="flex justify-between items-center mb-4">
+                <p class="text-sm text-gray-600">Configura i campi personalizzati per questa categoria</p>
+                <button id="add-field-btn" class="btn btn-primary btn-sm">
+                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Aggiungi Campo
+                </button>
+              </div>
+              
+              <div id="fields-list" class="space-y-3">
+                <!-- Fields will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <button
+          type="button"
+          id="close-fields-btn"
+          class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm"
+        >
+          Chiudi
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

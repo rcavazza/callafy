@@ -1,0 +1,1054 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopify Export - Inventory Manager</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1a202c;
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { 
+            color: #2d3748; 
+            font-size: 1.5rem; 
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .back-btn {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: #cbd5e0; }
+        
+        /* Container */
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 2rem; 
+        }
+        
+        /* Status Cards */
+        .status-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .status-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        .status-card h3 {
+            font-size: 1rem;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .status-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .status-description {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        
+        /* Status Colors */
+        .status-connected { color: #10b981; }
+        .status-disconnected { color: #ef4444; }
+        .status-warning { color: #f59e0b; }
+        .status-neutral { color: #6b7280; }
+        
+        /* Main Content */
+        .main-content {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        
+        /* Controls Section */
+        .controls-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f7fafc;
+        }
+        .controls-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background: white;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: #3182ce;
+            color: white;
+        }
+        .btn-primary:hover { background: #2c5282; }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .btn-secondary:hover { background: #cbd5e0; }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover { background: #059669; }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-warning:hover { background: #d97706; }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover { background: #dc2626; }
+        
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .products-table th,
+        .products-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .products-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.875rem;
+        }
+        .products-table td {
+            font-size: 0.875rem;
+        }
+        .products-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-never-exported {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .status-exported {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status-exporting {
+            background: #ddd6fe;
+            color: #5b21b6;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.25rem;
+        }
+        .action-btn {
+            padding: 0.25rem 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Preview Panel */
+        .preview-panel {
+            border-top: 1px solid #e2e8f0;
+            background: #f7fafc;
+            display: none;
+        }
+        .preview-panel.show {
+            display: block;
+        }
+        .preview-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .preview-content {
+            padding: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* Progress Section */
+        .progress-section {
+            padding: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            background: #f7fafc;
+            display: none;
+        }
+        .progress-section.show {
+            display: block;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #3182ce;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-text {
+            font-size: 0.875rem;
+            color: #4a5568;
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #6b7280;
+        }
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid #3182ce;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+        .empty-state h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header { padding: 1rem; }
+            .controls-row { flex-direction: column; align-items: stretch; }
+            .status-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛒 Shopify Export</h1>
+        <a href="/dashboard-new" class="back-btn">← Dashboard</a>
+    </div>
+    
+    <div class="container">
+        <!-- Status Section -->
+        <div class="status-section">
+            <div class="status-card">
+                <h3>🔗 Connection Status</h3>
+                <div class="status-value" id="connection-status">
+                    <span class="loading">
+                        <span class="spinner"></span>
+                        Checking...
+                    </span>
+                </div>
+                <div class="status-description" id="connection-description">
+                    Testing Shopify connection...
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <h3>📊 Rate Limit</h3>
+                <div class="status-value" id="rate-limit-status">
+                    <span class="loading">
+                        <span class="spinner"></span>
+                        Loading...
+                    </span>
+                </div>
+                <div class="status-description" id="rate-limit-description">
+                    Checking API rate limit...
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <h3>📦 Export Summary</h3>
+                <div class="status-value" id="export-summary">
+                    <span class="loading">
+                        <span class="spinner"></span>
+                        Loading...
+                    </span>
+                </div>
+                <div class="status-description" id="export-description">
+                    Loading product statistics...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Controls -->
+            <div class="controls-section">
+                <div class="controls-row">
+                    <input type="text" class="search-box" id="search-input" placeholder="🔍 Search products...">
+                    
+                    <select class="filter-select" id="status-filter">
+                        <option value="">All Status</option>
+                        <option value="never-exported">Never Exported</option>
+                        <option value="exported">Exported</option>
+                        <option value="error">Export Errors</option>
+                    </select>
+                    
+                    <select class="filter-select" id="category-filter">
+                        <option value="">All Categories</option>
+                    </select>
+                    
+                    <button class="btn btn-secondary" id="refresh-btn">
+                        🔄 Refresh
+                    </button>
+                    
+                    <button class="btn btn-primary" id="bulk-export-btn" disabled>
+                        🚀 Export Selected
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Products Table -->
+            <div class="table-container">
+                <table class="products-table">
+                    <thead>
+                        <tr>
+                            <th width="40">
+                                <input type="checkbox" id="select-all">
+                            </th>
+                            <th>Product</th>
+                            <th width="120">Export Status</th>
+                            <th width="100">Shopify ID</th>
+                            <th width="120">Last Export</th>
+                            <th width="150">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-tbody">
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <div class="loading">
+                                    <span class="spinner"></span>
+                                    Loading products...
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Preview Panel -->
+            <div class="preview-panel" id="preview-panel">
+                <div class="preview-header">
+                    <h3>📋 Export Preview</h3>
+                    <button class="btn btn-secondary" id="close-preview">✕ Close</button>
+                </div>
+                <div class="preview-content" id="preview-content">
+                    <!-- Preview content will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Progress Section -->
+            <div class="progress-section" id="progress-section">
+                <div class="progress-text" id="progress-text">Preparing export...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="progress-details">0 of 0 products</span>
+                    <button class="btn btn-danger" id="cancel-export">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🛒 Shopify Export JavaScript loaded!');
+        
+        // Global state
+        let shopifyExportManager = null;
+        let products = [];
+        let selectedProducts = new Set();
+        let isExporting = false;
+        let connectionStatus = null;
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🛒 Shopify Export page initialized');
+            initializeShopifyExport();
+        });
+        
+        // Main initialization function
+        async function initializeShopifyExport() {
+            try {
+                // Initialize manager
+                shopifyExportManager = new ShopifyExportManager();
+                
+                // Load initial data
+                await Promise.all([
+                    shopifyExportManager.checkConnection(),
+                    shopifyExportManager.loadProducts(),
+                    shopifyExportManager.loadCategories()
+                ]);
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+                console.log('✅ Shopify Export initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing Shopify Export:', error);
+                showError('Failed to initialize Shopify Export: ' + error.message);
+            }
+        }
+        
+        // Shopify Export Manager Class
+        class ShopifyExportManager {
+            constructor() {
+                this.products = [];
+                this.categories = [];
+                this.selectedProducts = new Set();
+                this.isExporting = false;
+                this.connectionStatus = null;
+                this.rateLimit = null;
+            }
+            
+            // Check Shopify connection
+            async checkConnection() {
+                try {
+                    console.log('🔗 Checking Shopify connection...');
+                    const response = await fetch('/api/shopify/test');
+                    const data = await response.json();
+                    
+                    this.connectionStatus = data;
+                    this.updateConnectionStatus(data);
+                    
+                    // Also get rate limit if connected
+                    if (data.success) {
+                        await this.getRateLimit();
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error('❌ Error checking connection:', error);
+                    this.updateConnectionStatus({ success: false, message: error.message });
+                    throw error;
+                }
+            }
+            
+            // Get rate limit status
+            async getRateLimit() {
+                try {
+                    const response = await fetch('/api/shopify/rate-limit');
+                    const data = await response.json();
+                    
+                    this.rateLimit = data.data;
+                    this.updateRateLimitStatus(data.data);
+                    
+                    return data.data;
+                } catch (error) {
+                    console.error('❌ Error getting rate limit:', error);
+                    this.updateRateLimitStatus(null);
+                }
+            }
+            
+            // Load products
+            async loadProducts() {
+                try {
+                    console.log('📦 Loading products...');
+                    const response = await fetch('/api/products');
+                    const data = await response.json();
+                    
+                    this.products = data.products || [];
+                    this.renderProductsTable();
+                    this.updateExportSummary();
+                    
+                    console.log(`✅ Loaded ${this.products.length} products`);
+                    return this.products;
+                } catch (error) {
+                    console.error('❌ Error loading products:', error);
+                    this.renderProductsTable([]);
+                    throw error;
+                }
+            }
+            
+            // Load categories for filter
+            async loadCategories() {
+                try {
+                    const response = await fetch('/api/categories');
+                    const data = await response.json();
+                    
+                    this.categories = data.categories || [];
+                    this.populateCategoryFilter();
+                    
+                    return this.categories;
+                } catch (error) {
+                    console.error('❌ Error loading categories:', error);
+                }
+            }
+            
+            // Update connection status display
+            updateConnectionStatus(status) {
+                const statusEl = document.getElementById('connection-status');
+                const descEl = document.getElementById('connection-description');
+                
+                if (status.success) {
+                    statusEl.innerHTML = '<span class="status-connected">🟢 Connected</span>';
+                    descEl.textContent = status.message || 'Successfully connected to Shopify';
+                } else {
+                    statusEl.innerHTML = '<span class="status-disconnected">🔴 Disconnected</span>';
+                    descEl.textContent = status.message || 'Cannot connect to Shopify';
+                }
+            }
+            
+            // Update rate limit status display
+            updateRateLimitStatus(rateLimit) {
+                const statusEl = document.getElementById('rate-limit-status');
+                const descEl = document.getElementById('rate-limit-description');
+                
+                if (!rateLimit) {
+                    statusEl.innerHTML = '<span class="status-neutral">⚪ Unknown</span>';
+                    descEl.textContent = 'Rate limit information not available';
+                    return;
+                }
+                
+                const percentage = rateLimit.percentage || 0;
+                let statusClass = 'status-connected';
+                let icon = '🟢';
+                
+                if (percentage > 80) {
+                    statusClass = 'status-warning';
+                    icon = '🟡';
+                } else if (percentage > 95) {
+                    statusClass = 'status-disconnected';
+                    icon = '🔴';
+                }
+                
+                statusEl.innerHTML = `<span class="${statusClass}">${icon} ${rateLimit.used}/${rateLimit.total}</span>`;
+                descEl.textContent = `${percentage.toFixed(1)}% of API calls used`;
+            }
+            
+            // Update export summary
+            updateExportSummary() {
+                const statusEl = document.getElementById('export-summary');
+                const descEl = document.getElementById('export-description');
+                
+                const total = this.products.length;
+                const exported = this.products.filter(p => p.shopify_id).length;
+                const neverExported = total - exported;
+                
+                statusEl.innerHTML = `<span class="status-neutral">${exported}/${total}</span>`;
+                descEl.textContent = `${exported} exported, ${neverExported} never exported`;
+            }
+            
+            // Render products table
+            renderProductsTable() {
+                const tbody = document.getElementById('products-tbody');
+                
+                if (!this.products || this.products.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <h3>No products found</h3>
+                                <p>Create some products first to export them to Shopify</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = this.products.map(product => `
+                    <tr data-product-id="${product.id}">
+                        <td>
+                            <input type="checkbox" class="product-checkbox" value="${product.id}">
+                        </td>
+                        <td>
+                            <div style="font-weight: 500;">${escapeHtml(product.title)}</div>
+                            <div style="font-size: 0.75rem; color: #6b7280;">
+                                SKU: ${escapeHtml(product.sku || 'N/A')}
+                            </div>
+                        </td>
+                        <td>
+                            ${this.getStatusBadge(product)}
+                        </td>
+                        <td>
+                            ${product.shopify_id ? `#${product.shopify_id}` : '-'}
+                        </td>
+                        <td>
+                            ${product.last_export ? new Date(product.last_export).toLocaleDateString() : '-'}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn btn-primary" onclick="previewProduct(${product.id})" title="Preview">
+                                    👁️
+                                </button>
+                                <button class="action-btn btn-success" onclick="exportProduct(${product.id})" title="Export">
+                                    🚀
+                                </button>
+                                ${product.shopify_id ? `
+                                    <button class="action-btn btn-warning" onclick="syncProduct(${product.id})" title="Sync">
+                                        🔄
+                                    </button>
+                                    <button class="action-btn btn-danger" onclick="unlinkProduct(${product.id})" title="Unlink">
+                                        ❌
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+                
+                // Setup checkbox listeners
+                this.setupCheckboxListeners();
+            }
+            
+            // Get status badge for product
+            getStatusBadge(product) {
+                if (product.shopify_id) {
+                    return '<span class="status-badge status-exported">✅ Exported</span>';
+                } else {
+                    return '<span class="status-badge status-never-exported">⚪ Never Exported</span>';
+                }
+            }
+            
+            // Setup checkbox listeners
+            setupCheckboxListeners() {
+                const checkboxes = document.querySelectorAll('.product-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const productId = parseInt(e.target.value);
+                        if (e.target.checked) {
+                            this.selectedProducts.add(productId);
+                        } else {
+                            this.selectedProducts.delete(productId);
+                        }
+                        this.updateBulkExportButton();
+                    });
+                });
+            }
+            
+            // Update bulk export button state
+            updateBulkExportButton() {
+                const bulkBtn = document.getElementById('bulk-export-btn');
+                const count = this.selectedProducts.size;
+                
+                if (count > 0) {
+                    bulkBtn.disabled = false;
+                    bulkBtn.textContent = `🚀 Export Selected (${count})`;
+                } else {
+                    bulkBtn.disabled = true;
+                    bulkBtn.textContent = '🚀 Export Selected';
+                }
+            }
+            
+            // Populate category filter
+            populateCategoryFilter() {
+                const select = document.getElementById('category-filter');
+                const currentValue = select.value;
+                
+                select.innerHTML = '<option value="">All Categories</option>';
+                
+                this.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    select.appendChild(option);
+                });
+                
+                select.value = currentValue;
+            }
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Refresh button
+            document.getElementById('refresh-btn').addEventListener('click', async () => {
+                await shopifyExportManager.loadProducts();
+                await shopifyExportManager.checkConnection();
+            });
+            
+            // Select all checkbox
+            document.getElementById('select-all').addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.product-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = e.target.checked;
+                    const productId = parseInt(checkbox.value);
+                    if (e.target.checked) {
+                        shopifyExportManager.selectedProducts.add(productId);
+                    } else {
+                        shopifyExportManager.selectedProducts.delete(productId);
+                    }
+                });
+                shopifyExportManager.updateBulkExportButton();
+            });
+            
+            // Search input
+            document.getElementById('search-input').addEventListener('input', debounce(filterProducts, 300));
+            
+            // Filter selects
+            document.getElementById('status-filter').addEventListener('change', filterProducts);
+            document.getElementById('category-filter').addEventListener('change', filterProducts);
+            
+            // Close preview
+            document.getElementById('close-preview').addEventListener('click', () => {
+                document.getElementById('preview-panel').classList.remove('show');
+            });
+        }
+        
+        // Filter products based on search and filters
+        function filterProducts() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const categoryFilter = document.getElementById('category-filter').value;
+            
+            const rows = document.querySelectorAll('#products-tbody tr[data-product-id]');
+            
+            rows.forEach(row => {
+                const productId = parseInt(row.dataset.productId);
+                const product = shopifyExportManager.products.find(p => p.id === productId);
+                
+                if (!product) {
+                    row.style.display = 'none';
+                    return;
+                }
+                
+                let show = true;
+                
+                // Search filter
+                if (searchTerm) {
+                    const title = product.title.toLowerCase();
+                    const sku = (product.sku || '').toLowerCase();
+                    if (!title.includes(searchTerm) && !sku.includes(searchTerm)) {
+                        show = false;
+                    }
+                }
+                
+                // Status filter
+                if (statusFilter) {
+                    if (statusFilter === 'exported' && !product.shopify_id) show = false;
+                    if (statusFilter === 'never-exported' && product.shopify_id) show = false;
+                    // Add more status filters as needed
+                }
+                
+                // Category filter
+                if (categoryFilter && product.category_id != categoryFilter) {
+                    show = false;
+                }
+                
+                row.style.display = show ? '' : 'none';
+            });
+        }
+        
+        // Product action functions
+        async function previewProduct(productId) {
+            try {
+                console.log(`👁️ Previewing product ${productId}`);
+                showLoading('Loading preview...');
+                
+                const response = await fetch(`/api/shopify/preview/${productId}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load preview');
+                }
+                
+                showPreview(data);
+                hideLoading();
+            } catch (error) {
+                console.error('❌ Error previewing product:', error);
+                showError('Failed to preview product: ' + error.message);
+                hideLoading();
+            }
+        }
+        
+        async function exportProduct(productId) {
+            try {
+                console.log(`🚀 Exporting product ${productId}`);
+                showLoading('Exporting product...');
+                
+                const response = await fetch(`/api/shopify/export/${productId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ force: false })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Export failed');
+                }
+                
+                showSuccess(`Product exported successfully! Shopify ID: ${data.data.shopify_id}`);
+                await shopifyExportManager.loadProducts(); // Refresh table
+                hideLoading();
+            } catch (error) {
+                console.error('❌ Error exporting product:', error);
+                showError('Failed to export product: ' + error.message);
+                hideLoading();
+            }
+        }
+        
+        async function syncProduct(productId) {
+            try {
+                console.log(`🔄 Syncing product ${productId}`);
+                showLoading('Syncing product...');
+                
+                const response = await fetch(`/api/shopify/sync/${productId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Sync failed');
+                }
+                
+                showSuccess('Product synced successfully!');
+                await shopifyExportManager.loadProducts(); // Refresh table
+                hideLoading();
+            } catch (error) {
+                console.error('❌ Error syncing product:', error);
+                showError('Failed to sync product: ' + error.message);
+                hideLoading();
+            }
+        }
+        
+        async function unlinkProduct(productId) {
+            if (!confirm('Are you sure you want to unlink this product from Shopify?')) {
+                return;
+            }
+            
+            try {
+                console.log(`❌ Unlinking product ${productId}`);
+                showLoading('Unlinking product...');
+                
+                const response = await fetch(`/api/shopify/unlink/${productId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deleteFromShopify: false })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unlink failed');
+                }
+                
+                showSuccess('Product unlinked successfully!');
+                await shopifyExportManager.loadProducts(); // Refresh table
+                hideLoading();
+            } catch (error) {
+                console.error('❌ Error unlinking product:', error);
+                showError('Failed to unlink product: ' + error.message);
+                hideLoading();
+            }
+        }
+        
+        // Show preview panel
+        function showPreview(data) {
+            const panel = document.getElementById('preview-panel');
+            const content = document.getElementById('preview-content');
+            
+            let html = '<div style="display: grid; gap: 1.5rem;">';
+            
+            // Validation Results
+            if (data.data.validation) {
+                const validation = data.data.validation;
+                html += '<div>';
+                html += '<h4 style="margin-bottom: 0.5rem;">🔍 Validation Results</h4>';
+                
+                if (validation.isValid) {
+                    html += '<div style="color: #10b981; font-weight: 500;">✅ Product is valid for export</div>';
+                } else {
+                    html += '<div style="color: #ef4444; font-weight: 500;">❌ Product has validation errors</div>';
+                }
+                
+                if (validation.errors && validation.errors.length > 0) {
+                    html += '<div style="margin-top: 0.5rem;"><strong>Errors:</strong></div>';
+                    html += '<ul style="margin: 0.25rem 0; padding-left: 1.5rem; color: #ef4444;">';
+                    validation.errors.forEach(error => {
+                        html += `<li>${escapeHtml(error)}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                
+                if (validation.warnings && validation.warnings.length > 0) {
+                    html += '<div style="margin-top: 0.5rem;"><strong>Warnings:</strong></div>';
+                    html += '<ul style="margin: 0.25rem 0; padding-left: 1.5rem; color: #f59e0b;">';
+                    validation.warnings.forEach(warning => {
+                        html += `<li>${escapeHtml(warning)}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                html += '</div>';
+            }
+            
+            // Summary
+            if (data.data.summary) {
+                const summary = data.data.summary;
+                html += '<div>';
+                html += '<h4 style="margin-bottom: 0.5rem;">📊 Export Summary</h4>';
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; font-size: 0.875rem;">';
+                html += `<div><strong>Title:</strong> ${escapeHtml(summary.title)}</div>`;
+                html += `<div><strong>Variants:</strong> ${summary.variants_count}</div>`;
+                html += `<div><strong>Images:</strong> ${summary.images_count}</div>`;
+                html += `<div><strong>Options:</strong> ${summary.options_count}</div>`;
+                html += `<div><strong>Attributes:</strong> ${summary.attributes_count}</div>`;
+                html += `<div><strong>Status:</strong> ${summary.already_exported ? '✅ Already Exported' : '⚪ Never Exported'}</div>`;
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            // Shopify Data Preview
+            if (data.data.shopify_data) {
+                html += '<div>';
+                html += '<h4 style="margin-bottom: 0.5rem;">🛒 Shopify Data Preview</h4>';
+                html += '<pre style="background: #f3f4f6; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; max-height: 300px;">';
+                html += escapeHtml(JSON.stringify(data.data.shopify_data, null, 2));
+                html += '</pre>';
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            content.innerHTML = html;
+            panel.classList.add('show');
+        }
+        
+        // Utility functions
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return text;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        function showLoading(message = 'Loading...') {
+            // You can implement a loading overlay here
+            console.log('🔄 Loading:', message);
+        }
+        
+        function hideLoading() {
+            // Hide loading overlay
+            console.log('✅ Loading complete');
+        }
+        
+        function showSuccess(message) {
+            // You can implement a toast notification here
+            console.log('✅ Success:', message);
+            alert('Success: ' + message);
+        }
+        
+        function showError(message) {
+            // You can implement a toast notification here
+            console.error('❌ Error:', message);
+            alert('Error: ' + message);
+        }

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Inventory Manager</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1a202c;
+        }
+        .header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .header h1 { color: #2d3748; font-size: 1.5rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        .card h2 { color: #2d3748; margin-bottom: 1rem; font-size: 1.25rem; }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #3182ce;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.2s;
+            margin: 0.25rem;
+        }
+        .btn:hover { background: #2c5282; }
+        .btn-outline {
+            background: transparent;
+            color: #3182ce;
+            border: 1px solid #3182ce;
+        }
+        .btn-outline:hover {
+            background: #3182ce;
+            color: white;
+        }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #3182ce; }
+        .stat-label { color: #718096; font-size: 0.875rem; margin-top: 0.5rem; }
+        .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .success { color: #38a169; }
+        .loading { color: #ed8936; }
+        .error { color: #e53e3e; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏠 Dashboard - Inventory Manager</h1>
+    </div>
+    
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-products">-</div>
+                <div class="stat-label">Prodotti Totali</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-categories">-</div>
+                <div class="stat-label">Categorie</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-images">-</div>
+                <div class="stat-label">Immagini</div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="grid">
+            <!-- Prodotti Recenti -->
+            <div class="card">
+                <h2>📦 Prodotti Recenti</h2>
+                <div id="recent-products">
+                    <p class="loading">Caricamento prodotti...</p>
+                </div>
+                <button class="btn" onclick="navigateToProducts()">Vedi Tutti i Prodotti</button>
+            </div>
+            
+            <!-- Categorie -->
+            <div class="card">
+                <h2>📂 Categorie</h2>
+                <div id="categories-list">
+                    <p class="loading">Caricamento categorie...</p>
+                </div>
+                <button class="btn" onclick="navigateToCategories()">Gestisci Categorie</button>
+            </div>
+        </div>
+        
+        <!-- Azioni Rapide -->
+        <div class="card" style="margin-top: 2rem;">
+            <h2>⚡ Azioni Rapide</h2>
+            <div class="actions">
+                <button class="btn" onclick="navigateToCategories()">
+                    📂 Gestisci Categorie
+                </button>
+                <button class="btn" onclick="navigateToProducts()">
+                    📦 Aggiungi Prodotto
+                </button>
+                <button class="btn" onclick="navigateToVariantsManager()">
+                    🔧 Gestisci Varianti
+                </button>
+                <button class="btn" onclick="navigateToImages()">
+                    🖼️ Upload Immagini
+                </button>
+                <button class="btn" onclick="navigateToAttributes()">
+                    🏷️ Gestisci Attributi
+                </button>
+                <button class="btn" onclick="navigateToShopify()">
+                    🛒 Export Shopify
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        console.log('🏠 Dashboard JavaScript caricato!');
+        
+        // Navigation functions
+        function navigateToCategories() {
+            console.log('🔄 Navigating to categories');
+            window.location.href = '/categories-new';
+        }
+        
+        function navigateToProducts() {
+            console.log('🔄 Navigating to products');
+            window.location.href = '/products';
+        }
+        
+        function navigateToImages() {
+            console.log('🔄 Navigating to images');
+            window.location.href = '/images-new';
+        }
+        
+        function navigateToShopify() {
+            console.log('🔄 Navigating to shopify export');
+            window.location.href = '/shopify-export';
+        }
+        
+        function navigateToAttributes() {
+            console.log('🔄 Navigating to attributes');
+            window.location.href = '/attributes-new';
+        }
+        
+        function navigateToVariantsManager() {
+            console.log('🔄 Navigating to variants manager');
+            window.location.href = '/variants-manager';
+        }
+        
+        // Load dashboard data
+        async function loadDashboardData() {
+            console.log('📊 Loading dashboard data...');
+            
+            try {
+                // Load categories
+                console.log('📂 Loading categories...');
+                const categoriesResponse = await fetch('/api/categories');
+                console.log('📂 Categories response status:', categoriesResponse.status);
+                
+                if (categoriesResponse.ok) {
+                    const categoriesResult = await categoriesResponse.json();
+                    console.log('📂 Categories result:', categoriesResult);
+                    
+                    // Handle both array and object response formats
+                    const categories = Array.isArray(categoriesResult) ? categoriesResult : (categoriesResult.data || []);
+                    
+                    document.getElementById('total-categories').textContent = categories.length;
+                    
+                    const categoriesList = document.getElementById('categories-list');
+                    if (categories.length > 0) {
+                        categoriesList.innerHTML = categories.slice(0, 5).map(cat => {
+                            const fieldsCount = cat.fields ? cat.fields.length : 0;
+                            const fieldsText = fieldsCount > 0 ? ` (${fieldsCount} campi custom)` : '';
+                            return `<p>📂 ${cat.name}${fieldsText}</p>`;
+                        }).join('');
+                    } else {
+                        categoriesList.innerHTML = '<p>Nessuna categoria trovata</p>';
+                    }
+                } else {
+                    console.error('❌ Categories API error:', categoriesResponse.status);
+                    document.getElementById('categories-list').innerHTML = '<p class="error">Errore caricamento categorie</p>';
+                }
+                
+                // Load products
+                console.log('📦 Loading products...');
+                const productsResponse = await fetch('/api/products?limit=5');
+                console.log('📦 Products response status:', productsResponse.status);
+                
+                if (productsResponse.ok) {
+                    const productsResult = await productsResponse.json();
+                    console.log('📦 Products result:', productsResult);
+                    
+                    const products = Array.isArray(productsResult) ? productsResult : (productsResult.data || []);
+                    const totalProducts = productsResult.pagination ? productsResult.pagination.total : products.length;
+                    
+                    document.getElementById('total-products').textContent = totalProducts;
+                    
+                    const productsList = document.getElementById('recent-products');
+                    if (products.length > 0) {
+                        productsList.innerHTML = products.map(product => 
+                            `<p>📦 ${product.title} - ${product.status}</p>`
+                        ).join('');
+                    } else {
+                        productsList.innerHTML = '<p>Nessun prodotto ancora</p>';
+                    }
+                } else {
+                    console.error('❌ Products API error:', productsResponse.status);
+                    document.getElementById('recent-products').innerHTML = '<p class="error">Errore caricamento prodotti</p>';
+                }
+                
+                // Placeholder for images count
+                document.getElementById('total-images').textContent = '0';
+                
+                console.log('✅ Dashboard data loaded successfully');
+                
+            } catch (error) {
+                console.error('❌ Error loading dashboard data:', error);
+                document.getElementById('categories-list').innerHTML = '<p class="error">Errore di connessione</p>';
+                document.getElementById('recent-products').innerHTML = '<p class="error">Errore di connessione</p>';
+            }
+        }
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏠 Dashboard DOM ready');
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>
