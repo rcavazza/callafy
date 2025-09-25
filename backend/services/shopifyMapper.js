@@ -148,8 +148,16 @@ class ShopifyMapper {
     return images
       .sort((a, b) => a.position - b.position)
       .map(image => {
+        const fullUrl = this.getFullImageUrl(image.src);
+        
+        // Skip localhost URLs as Shopify cannot access them
+        if (this.isLocalhostUrl(fullUrl)) {
+          logger.warn(`Skipping localhost image URL for Shopify export: ${fullUrl}`);
+          return null;
+        }
+
         const shopifyImage = {
-          src: this.getFullImageUrl(image.src),
+          src: fullUrl,
           alt: image.alt_text || '',
           position: image.position || 1
         };
@@ -160,7 +168,8 @@ class ShopifyMapper {
         }
 
         return shopifyImage;
-      });
+      })
+      .filter(image => image !== null); // Remove null entries (localhost URLs)
   }
 
   /**
@@ -236,6 +245,16 @@ class ShopifyMapper {
   }
 
   /**
+   * Check if URL is a localhost URL (not accessible by Shopify)
+   * @param {string} url - URL to check
+   * @returns {boolean} True if localhost URL
+   */
+  static isLocalhostUrl(url) {
+    if (!url) return false;
+    return url.includes('localhost') || url.includes('127.0.0.1') || url.includes('0.0.0.0');
+  }
+
+  /**
    * Map Shopify product response back to internal format (for updates)
    * @param {Object} shopifyProduct - Shopify product response
    * @returns {Object} Internal product update data
@@ -291,6 +310,11 @@ class ShopifyMapper {
       product.images.forEach((image, index) => {
         if (!image.src) {
           warnings.push(`Image ${index + 1}: Missing source URL`);
+        } else {
+          const fullUrl = this.getFullImageUrl(image.src);
+          if (this.isLocalhostUrl(fullUrl)) {
+            warnings.push(`Image ${index + 1}: Localhost URLs cannot be accessed by Shopify and will be skipped`);
+          }
         }
       });
     }
