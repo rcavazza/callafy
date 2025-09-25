@@ -248,17 +248,8 @@ class ShopifyMapper {
         // Map other fields as needed
       };
 
-      // Map variants
-      if (shopifyProduct.variants && shopifyProduct.variants.length > 0) {
-        updateData.variants = shopifyProduct.variants.map(variant => ({
-          shopify_id: variant.id,
-          sku: variant.sku,
-          price: parseFloat(variant.price),
-          compare_at_price: variant.compare_at_price ? parseFloat(variant.compare_at_price) : null,
-          inventory_quantity: variant.inventory_quantity,
-          // Map other variant fields as needed
-        }));
-      }
+      // Note: Variants are updated separately in the route handler
+      // to avoid Sequelize primary key issues when updating the product
 
       logger.info(`Mapped Shopify response for product ${shopifyProduct.id} to internal format`);
       return updateData;
