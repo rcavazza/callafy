@@ -72,7 +72,7 @@ class ShopifyMapper {
       }];
     }
 
-    return variants.map(variant => {
+    return variants.map((variant, variantIndex) => {
       const shopifyVariant = {
         price: variant.price.toString(),
         compare_at_price: variant.compare_at_price ? variant.compare_at_price.toString() : null,
@@ -86,8 +86,25 @@ class ShopifyMapper {
         taxable: true
       };
 
-      // Note: option1, option2, option3 are legacy fields not used in modern Shopify GraphQL API
-      // Modern Shopify uses selectedOptions instead
+      // Map option values to option1, option2, option3 (required by Shopify REST API)
+      if (variant.selectedOptions && variant.selectedOptions.length > 0) {
+        variant.selectedOptions.forEach((option, index) => {
+          if (index < 3) { // Shopify supports max 3 options
+            shopifyVariant[`option${index + 1}`] = option.value;
+          }
+        });
+      } else {
+        // If no selectedOptions, try to extract from variant data
+        if (variant.option1) {
+          shopifyVariant.option1 = variant.option1;
+        } else {
+          // Generate unique option value based on variant index to avoid duplicates
+          shopifyVariant.option1 = `Variant ${variantIndex + 1}`;
+        }
+        
+        if (variant.option2) shopifyVariant.option2 = variant.option2;
+        if (variant.option3) shopifyVariant.option3 = variant.option3;
+      }
 
       // Add weight if available
       if (variant.weight) {
@@ -293,6 +310,105 @@ class ShopifyMapper {
     }
     if (!product.vendor) {
       warnings.push('Product vendor is recommended');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  /**
+   * Map single variant to Shopify format (for individual variant export)
+   * @param {Object} variant - Variant object with product relation
+   * @returns {Object} Shopify-formatted variant data
+   */
+  static mapSingleVariantToShopify(variant) {
+    try {
+      const shopifyVariant = {
+        price: variant.price.toString(),
+        compare_at_price: variant.compare_at_price ? variant.compare_at_price.toString() : null,
+        sku: variant.sku || '',
+        barcode: variant.barcode || '',
+        inventory_quantity: variant.inventory_quantity || 0,
+        inventory_management: this.mapInventoryManagement(variant.inventory_management),
+        fulfillment_service: "manual",
+        inventory_policy: "deny",
+        requires_shipping: true,
+        taxable: true
+      };
+
+      // Add weight if available
+      if (variant.weight) {
+        shopifyVariant.weight = variant.weight;
+        shopifyVariant.weight_unit = variant.weight_unit || 'kg';
+      }
+
+      // Add Shopify ID if exists (for updates)
+      if (variant.shopify_id) {
+        shopifyVariant.id = variant.shopify_id;
+      }
+
+      // Map option values to option1, option2, option3 (required by Shopify REST API)
+      if (variant.selectedOptions && variant.selectedOptions.length > 0) {
+        variant.selectedOptions.forEach((option, index) => {
+          if (index < 3) { // Shopify supports max 3 options
+            shopifyVariant[`option${index + 1}`] = option.value;
+          }
+        });
+      } else {
+        // If no selectedOptions, try to extract from variant data
+        if (variant.option1) {
+          shopifyVariant.option1 = variant.option1;
+        } else {
+          // Generate unique option value based on variant ID or SKU to avoid duplicates
+          shopifyVariant.option1 = variant.sku || `Variant-${variant.id || Date.now()}`;
+        }
+        
+        if (variant.option2) shopifyVariant.option2 = variant.option2;
+        if (variant.option3) shopifyVariant.option3 = variant.option3;
+      }
+
+      logger.info(`Mapped variant ${variant.id} to Shopify format`);
+      return shopifyVariant;
+
+    } catch (error) {
+      logger.error('Error mapping variant to Shopify:', error);
+      throw new Error(`Failed to map variant ${variant.id} to Shopify format: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validate single variant for Shopify export
+   * @param {Object} variant - Variant to validate
+   * @returns {Object} Validation result
+   */
+  static validateVariantForShopify(variant) {
+    const errors = [];
+    const warnings = [];
+
+    // Required fields
+    if (variant.price === null || variant.price === undefined) {
+      errors.push('Variant price is required');
+    }
+    if (variant.price < 0) {
+      errors.push('Variant price cannot be negative');
+    }
+
+    // Check parent product
+    if (!variant.product) {
+      errors.push('Variant must have associated product data');
+    } else if (!variant.product.shopify_id) {
+      errors.push('Parent product must be exported to Shopify first');
+    }
+
+    // Recommended fields
+    if (!variant.sku) {
+      warnings.push('SKU is recommended for inventory tracking');
+    }
+    if (variant.inventory_quantity === 0) {
+      warnings.push('Inventory quantity is 0 - product will appear as out of stock');
     }
 
     return {

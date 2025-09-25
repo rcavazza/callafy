@@ -1,0 +1,41 @@
+{
+  "id": 9,
+  "title": "ttt",
+  "description": "",
+  "vendor": "",
+  "product_type": "",
+  "tags": "",
+  "handle": "ttt",
+  "status": "draft",
+  "category_id": 3,
+  "options": [
+    {
+      "name": "jjj",
+      "position": 1,
+      "values": ["3", "2", "1"]
+    },
+    {
+      "name": "Colore",
+      "position": 2,
+      "values": ["Rosso", "Blu"]
+    }
+  ],
+  "variants": [
+    {
+      "sku": "test-rosso-001",
+      "price": 10,
+      "inventory_quantity": 5,
+      "selectedOptions": [
+        {"name": "Colore", "value": "Rosso"}
+      ]
+    },
+    {
+      "sku": "test-blu-002", 
+      "price": 12,
+      "inventory_quantity": 3,
+      "selectedOptions": [
+        {"name": "Colore", "value": "Blu"}
+      ]
+    }
+  ]
+}

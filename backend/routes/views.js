@@ -137,13 +137,6 @@ router.get('/categories-new', (req, res) => {
 });
 
 
-// New Images page - rebuilt from scratch with full functionality
-router.get('/images-new', (req, res) => {
-  res.render('pages/images-new', {
-    title: 'Gestione Immagini',
-    page: 'images-new'
-  });
-});
 
 // New Attributes page - rebuilt from scratch with full functionality
 router.get('/attributes-new', (req, res) => {
@@ -166,6 +159,15 @@ router.get('/variants-manager', (req, res) => {
   res.render('pages/variants-manager', {
     title: 'Gestione Varianti Avanzata',
     page: 'variants-manager'
+  });
+});
+
+// Variants Manager page with product ID - for editing existing product variants
+router.get('/variants-manager/:productId', (req, res) => {
+  res.render('pages/variants-manager', {
+    title: 'Gestione Varianti Avanzata',
+    page: 'variants-manager',
+    productId: req.params.productId
   });
 });
 

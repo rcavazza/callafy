@@ -440,7 +440,8 @@ class VariantsManager {
             inventory_quantity: 0,
             barcode: '',
             weight: null,
-            selectedOptions: []
+            selectedOptions: [],
+            images: []
         };
         
         this.variants.push(variant);
@@ -556,9 +557,286 @@ class VariantsManager {
                             >
                         </div>
                     </div>
+                    
+                    <!-- Images Section -->
+                    <div class="variant-images-section">
+                        <div class="images-header">
+                            <h4 class="images-title">🖼️ Immagini Variante</h4>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="window.variantsManager.toggleImagesSection(${index})">
+                                <span id="toggle-images-${index}">▼ Mostra</span>
+                            </button>
+                        </div>
+                        <div class="images-content" id="images-content-${index}" style="display: none;">
+                            <div class="images-upload-zone"
+                                 ondrop="window.variantsManager.handleImageDrop(event, ${index})"
+                                 ondragover="window.variantsManager.handleImageDragOver(event)"
+                                 ondragleave="window.variantsManager.handleImageDragLeave(event)"
+                                 onclick="window.variantsManager.triggerImageUpload(${index})">
+                                <div class="upload-icon">📤</div>
+                                <div class="upload-text">Trascina immagini qui o clicca per selezionare</div>
+                                <div class="upload-subtext">JPG, PNG, GIF, WEBP (max 5MB)</div>
+                                <input type="file"
+                                       id="image-input-${index}"
+                                       multiple
+                                       accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                       style="display: none;"
+                                       onchange="window.variantsManager.handleImageSelect(event, ${index})">
+                            </div>
+                            <div class="images-gallery" id="images-gallery-${index}">
+                                ${this.renderVariantImages(variant.images || [], index)}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `).join('');
+    }
+    
+    renderVariantImages(images, variantIndex) {
+        if (!images || images.length === 0) {
+            return '<div class="no-images">Nessuna immagine caricata</div>';
+        }
+        
+        return images.map((image, imageIndex) => `
+            <div class="image-item" data-image-id="${image.id}">
+                <div class="image-preview">
+                    <img src="${image.src}" alt="${image.alt_text || ''}" loading="lazy">
+                </div>
+                <div class="image-info">
+                    <div class="image-filename">${image.filename || 'Immagine'}</div>
+                    <div class="image-size">${this.formatFileSize(image.size)}</div>
+                </div>
+                <div class="image-actions">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="window.variantsManager.moveImageUp(${variantIndex}, ${imageIndex})" ${imageIndex === 0 ? 'disabled' : ''}>↑</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="window.variantsManager.moveImageDown(${variantIndex}, ${imageIndex})" ${imageIndex === images.length - 1 ? 'disabled' : ''}>↓</button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="window.variantsManager.removeImage(${variantIndex}, ${imageIndex})">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    formatFileSize(bytes) {
+        if (!bytes) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    toggleImagesSection(variantIndex) {
+        const content = document.getElementById(`images-content-${variantIndex}`);
+        const toggle = document.getElementById(`toggle-images-${variantIndex}`);
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            toggle.textContent = '▲ Nascondi';
+            // Load images if not already loaded
+            this.loadVariantImages(variantIndex);
+        } else {
+            content.style.display = 'none';
+            toggle.textContent = '▼ Mostra';
+        }
+    }
+    
+    async loadVariantImages(variantIndex) {
+        const variant = this.variants[variantIndex];
+        if (!variant || !variant.id) return;
+        
+        try {
+            const response = await fetch(`/api/variants/${variant.id}/images`);
+            if (!response.ok) return;
+            
+            const result = await response.json();
+            if (result.success) {
+                variant.images = result.data || [];
+                this.updateImagesGallery(variantIndex);
+            }
+        } catch (error) {
+            console.error('Error loading variant images:', error);
+        }
+    }
+    
+    updateImagesGallery(variantIndex) {
+        const gallery = document.getElementById(`images-gallery-${variantIndex}`);
+        if (gallery) {
+            gallery.innerHTML = this.renderVariantImages(this.variants[variantIndex].images || [], variantIndex);
+        }
+    }
+    
+    triggerImageUpload(variantIndex) {
+        const input = document.getElementById(`image-input-${variantIndex}`);
+        input.click();
+    }
+    
+    handleImageSelect(event, variantIndex) {
+        const files = Array.from(event.target.files);
+        this.uploadImages(files, variantIndex);
+    }
+    
+    handleImageDrop(event, variantIndex) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const uploadZone = event.currentTarget;
+        uploadZone.classList.remove('drag-over');
+        
+        const files = Array.from(event.dataTransfer.files).filter(file =>
+            file.type.startsWith('image/')
+        );
+        
+        if (files.length > 0) {
+            this.uploadImages(files, variantIndex);
+        }
+    }
+    
+    handleImageDragOver(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.currentTarget.classList.add('drag-over');
+    }
+    
+    handleImageDragLeave(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.currentTarget.classList.remove('drag-over');
+    }
+    
+    async uploadImages(files, variantIndex) {
+        const variant = this.variants[variantIndex];
+        if (!variant.id) {
+            this.showError('Salva prima la variante per caricare le immagini');
+            return;
+        }
+        
+        const formData = new FormData();
+        files.forEach(file => {
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                this.showError(`File ${file.name} troppo grande (max 5MB)`);
+                return;
+            }
+            formData.append('images', file);
+        });
+        
+        try {
+            this.showLoading(`Caricamento ${files.length} immagini...`);
+            
+            const response = await fetch(`/api/variants/${variant.id}/images/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                variant.images = variant.images || [];
+                variant.images.push(...result.data);
+                this.updateImagesGallery(variantIndex);
+                this.showSuccess(`${result.count} immagini caricate con successo`);
+            } else {
+                this.showError(result.error || 'Errore durante il caricamento');
+            }
+        } catch (error) {
+            console.error('Error uploading images:', error);
+            this.showError('Errore durante il caricamento delle immagini');
+        } finally {
+            this.hideLoading();
+        }
+    }
+    
+    async removeImage(variantIndex, imageIndex) {
+        const variant = this.variants[variantIndex];
+        const image = variant.images[imageIndex];
+        
+        if (!image || !image.id) return;
+        
+        if (!confirm('Sei sicuro di voler eliminare questa immagine?')) return;
+        
+        try {
+            const response = await fetch(`/api/variants/${variant.id}/images/${image.id}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                variant.images.splice(imageIndex, 1);
+                this.updateImagesGallery(variantIndex);
+                this.showSuccess('Immagine eliminata con successo');
+            } else {
+                this.showError(result.error || 'Errore durante l\'eliminazione');
+            }
+        } catch (error) {
+            console.error('Error removing image:', error);
+            this.showError('Errore durante l\'eliminazione dell\'immagine');
+        }
+    }
+    
+    async moveImageUp(variantIndex, imageIndex) {
+        if (imageIndex === 0) return;
+        
+        const variant = this.variants[variantIndex];
+        const image = variant.images[imageIndex];
+        
+        await this.updateImagePosition(variant.id, image.id, imageIndex);
+        
+        // Swap in local array
+        [variant.images[imageIndex], variant.images[imageIndex - 1]] =
+        [variant.images[imageIndex - 1], variant.images[imageIndex]];
+        
+        this.updateImagesGallery(variantIndex);
+    }
+    
+    async moveImageDown(variantIndex, imageIndex) {
+        const variant = this.variants[variantIndex];
+        if (imageIndex === variant.images.length - 1) return;
+        
+        const image = variant.images[imageIndex];
+        
+        await this.updateImagePosition(variant.id, image.id, imageIndex + 2);
+        
+        // Swap in local array
+        [variant.images[imageIndex], variant.images[imageIndex + 1]] =
+        [variant.images[imageIndex + 1], variant.images[imageIndex]];
+        
+        this.updateImagesGallery(variantIndex);
+    }
+    
+    async updateImagePosition(variantId, imageId, newPosition) {
+        try {
+            await fetch(`/api/variants/${variantId}/images/${imageId}/position`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ position: newPosition })
+            });
+        } catch (error) {
+            console.error('Error updating image position:', error);
+        }
+    }
+    
+    showLoading(message) {
+        // Implementation for loading indicator
+        console.log('Loading:', message);
+    }
+    
+    hideLoading() {
+        // Implementation for hiding loading indicator
+        console.log('Loading hidden');
+    }
+    
+    showSuccess(message) {
+        // Implementation for success notification
+        console.log('Success:', message);
+        if (window.showSuccess) {
+            window.showSuccess(message);
+        }
+    }
+    
+    showError(message) {
+        // Implementation for error notification
+        console.error('Error:', message);
+        if (window.showError) {
+            window.showError(message);
+        }
     }
     
     updateVariant(index, field, value) {
@@ -662,7 +940,8 @@ class VariantsManager {
                 weight: variant.weight,
                 weight_unit: variant.weight_unit || 'kg',
                 barcode: variant.barcode || '',
-                selectedOptions: variant.selectedOptions || []
+                selectedOptions: variant.selectedOptions || [],
+                images: variant.images || []
             };
             console.log('🔧 VariantsManager: Mapped variant:', mappedVariant);
             return mappedVariant;

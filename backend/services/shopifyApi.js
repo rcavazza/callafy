@@ -349,6 +349,103 @@ class ShopifyApiClient {
     
     throw lastError;
   }
+
+  /**
+   * Create a new variant in an existing product
+   * @param {number} productId - Shopify product ID
+   * @param {Object} variantData - Shopify-formatted variant data
+   * @returns {Promise<Object>} Shopify variant response
+   */
+  async createVariantInProduct(productId, variantData) {
+    try {
+      if (!this.isConfigured()) {
+        throw new Error('Shopify API not configured');
+      }
+
+      logger.info(`Creating variant in product ${productId}`);
+      
+      const response = await this.client.post(`/products/${productId}/variants.json`, variantData);
+      
+      logger.info(`Variant created in product ${productId} with ID: ${response.data.variant.id}`);
+      return response.data;
+
+    } catch (error) {
+      logger.error(`Error creating variant in product ${productId}:`, error.message);
+      throw this.createShopifyError('Failed to create variant', error);
+    }
+  }
+
+  /**
+   * Update an existing variant
+   * @param {number} variantId - Shopify variant ID
+   * @param {Object} variantData - Shopify-formatted variant data
+   * @returns {Promise<Object>} Shopify variant response
+   */
+  async updateVariant(variantId, variantData) {
+    try {
+      if (!this.isConfigured()) {
+        throw new Error('Shopify API not configured');
+      }
+
+      logger.info(`Updating variant ${variantId}`);
+      
+      const response = await this.client.put(`/variants/${variantId}.json`, variantData);
+      
+      logger.info(`Variant ${variantId} updated successfully`);
+      return response.data;
+
+    } catch (error) {
+      logger.error(`Error updating variant ${variantId}:`, error.message);
+      throw this.createShopifyError('Failed to update variant', error);
+    }
+  }
+
+  /**
+   * Get a variant from Shopify
+   * @param {number} variantId - Shopify variant ID
+   * @returns {Promise<Object>} Shopify variant data
+   */
+  async getVariant(variantId) {
+    try {
+      if (!this.isConfigured()) {
+        throw new Error('Shopify API not configured');
+      }
+
+      logger.info(`Fetching variant ${variantId} from Shopify`);
+      
+      const response = await this.client.get(`/variants/${variantId}.json`);
+      
+      return response.data;
+
+    } catch (error) {
+      logger.error(`Error fetching variant ${variantId} from Shopify:`, error.message);
+      throw this.createShopifyError('Failed to fetch variant', error);
+    }
+  }
+
+  /**
+   * Delete a variant from Shopify
+   * @param {number} productId - Shopify product ID
+   * @param {number} variantId - Shopify variant ID
+   * @returns {Promise<void>}
+   */
+  async deleteVariant(productId, variantId) {
+    try {
+      if (!this.isConfigured()) {
+        throw new Error('Shopify API not configured');
+      }
+
+      logger.info(`Deleting variant ${variantId} from product ${productId}`);
+      
+      await this.client.delete(`/products/${productId}/variants/${variantId}.json`);
+      
+      logger.info(`Variant ${variantId} deleted from Shopify`);
+
+    } catch (error) {
+      logger.error(`Error deleting variant ${variantId}:`, error.message);
+      throw this.createShopifyError('Failed to delete variant', error);
+    }
+  }
 }
 
 module.exports = ShopifyApiClient;

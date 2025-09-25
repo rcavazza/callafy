@@ -20,6 +20,7 @@ const productSchema = Joi.object({
 
 const variantSchema = Joi.object({
   id: Joi.number().integer().optional(), // For updates
+  shopify_id: Joi.string().allow('', null).optional(), // For Shopify integration
   title: Joi.string().max(255).allow('', null),
   sku: Joi.string().max(255).allow('', null),
   price: Joi.number().min(0).required(),
@@ -46,6 +47,8 @@ const optionSchema = Joi.object({
 
 // Extended schema for product creation with nested data
 const productCreateSchema = Joi.object({
+  id: Joi.number().integer().optional(), // For updates - allows product ID to be sent
+  shopify_id: Joi.string().allow('', null).optional(), // For Shopify integration
   title: Joi.string().min(1).max(255).required(),
   description: Joi.string().allow('', null),
   vendor: Joi.string().max(255).allow('', null),
@@ -205,7 +208,7 @@ router.post('/', async (req, res, next) => {
   const transaction = await sequelize.transaction();
   
   try {
-    const { error, value } = productCreateSchema.validate(req.body);
+    const { error, value } = productCreateSchema.validate(req.body, { allowUnknown: true });
     if (error) {
       await transaction.rollback();
       return res.status(400).json({
@@ -311,7 +314,7 @@ router.put('/:id', async (req, res, next) => {
   
   try {
     const { id } = req.params;
-    const { error, value } = productCreateSchema.validate(req.body);
+    const { error, value } = productCreateSchema.validate(req.body, { allowUnknown: true });
     
     if (error) {
       await transaction.rollback();
@@ -367,39 +370,141 @@ router.put('/:id', async (req, res, next) => {
       }
     }
 
-    // Handle variants update (for complex form - backward compatibility)
-    if (variants && variants.length > 0) {
-      // Remove existing variants
-      await Variant.destroy({
-        where: { product_id: id },
-        transaction
-      });
-
-      // Create new variants
-      for (const variantData of variants) {
-        await Variant.create({
-          ...variantData,
-          product_id: id
-        }, { transaction });
-      }
-    }
-
-    // Handle options update
+    // Handle options update FIRST (before variants)
     if (options && options.length > 0) {
+      logger.info(`🔧 Processing ${options.length} options for product ${id}`);
+      console.log('🔍 Options data received:', JSON.stringify(options, null, 2));
+      
       // Remove existing options
-      await Option.destroy({
+      const deletedOptionsCount = await Option.destroy({
         where: { product_id: id },
         transaction
       });
+      logger.info(`🗑️ Deleted ${deletedOptionsCount} existing options for product ${id}`);
 
       // Create new options
       for (let i = 0; i < options.length; i++) {
         const optionData = options[i];
-        await Option.create({
+        const createdOption = await Option.create({
           ...optionData,
           product_id: id,
           position: i + 1
         }, { transaction });
+        
+        logger.info(`✅ Created option ${createdOption.id} (${createdOption.name}) for product ${id}`);
+      }
+    }
+
+    // Handle variants update AFTER options are created
+    if (variants && variants.length > 0) {
+      logger.info(`🔧 Processing ${variants.length} variants for product ${id}`);
+      console.log('🔍 Variants data received:', JSON.stringify(variants, null, 2));
+      
+      // Get existing variants to avoid duplicates
+      const existingVariants = await Variant.findAll({
+        where: { product_id: id },
+        include: [{
+          model: VariantOption,
+          as: 'variantOptions',
+          include: [{
+            model: Option,
+            as: 'option'
+          }]
+        }],
+        transaction
+      });
+      
+      logger.info(`📦 Found ${existingVariants.length} existing variants for product ${id}`);
+
+      // Process each new variant
+      for (const variantData of variants) {
+        const { selectedOptions, ...variantFields } = variantData;
+        
+        console.log('🔧 Processing variant:', variantFields);
+        console.log('🔧 Selected options:', selectedOptions);
+        
+        // Check if this variant combination already exists
+        let variantExists = false;
+        let existingVariant = null;
+        
+        if (selectedOptions && selectedOptions.length > 0) {
+          for (const existing of existingVariants) {
+            const existingOptions = existing.variantOptions.map(vo => ({
+              name: vo.option.name,
+              value: vo.option_value
+            })).sort((a, b) => a.name.localeCompare(b.name));
+            
+            const newOptions = selectedOptions.map(so => ({
+              name: so.name,
+              value: so.value
+            })).sort((a, b) => a.name.localeCompare(b.name));
+            
+            if (JSON.stringify(existingOptions) === JSON.stringify(newOptions)) {
+              variantExists = true;
+              existingVariant = existing;
+              break;
+            }
+          }
+        }
+        
+        let targetVariant;
+        
+        if (variantExists && existingVariant) {
+          // Update existing variant
+          console.log(`🔄 Updating existing variant ${existingVariant.id}`);
+          await existingVariant.update(variantFields, { transaction });
+          targetVariant = existingVariant;
+          logger.info(`✅ Updated existing variant ${existingVariant.id} for product ${id}`);
+        } else {
+          // Create new variant
+          console.log('🔧 Creating new variant');
+          targetVariant = await Variant.create({
+            ...variantFields,
+            product_id: id
+          }, { transaction });
+          logger.info(`✅ Created new variant ${targetVariant.id} for product ${id}`);
+        }
+        
+        // Handle variant options if provided (only for new variants)
+        if (selectedOptions && selectedOptions.length > 0 && !variantExists) {
+          console.log(`🔧 Processing ${selectedOptions.length} options for variant ${targetVariant.id}`);
+          
+          // Get the option IDs by name (options should now exist)
+          const optionsByName = {};
+          const productOptions = await Option.findAll({
+            where: { product_id: id },
+            transaction
+          });
+          
+          console.log('🔍 Available product options:', productOptions.map(o => ({ id: o.id, name: o.name })));
+          
+          productOptions.forEach(option => {
+            optionsByName[option.name] = option.id;
+          });
+          
+          // Create variant options
+          for (let i = 0; i < selectedOptions.length; i++) {
+            const selectedOption = selectedOptions[i];
+            const optionId = optionsByName[selectedOption.name];
+            
+            console.log(`🔧 Processing option: ${selectedOption.name} = ${selectedOption.value}, optionId: ${optionId}`);
+            
+            if (optionId) {
+              const variantOption = await VariantOption.create({
+                variant_id: targetVariant.id,
+                option_id: optionId,
+                option_value: selectedOption.value,
+                position: i + 1
+              }, { transaction });
+              
+              logger.info(`✅ Created variant option ${variantOption.id} for variant ${targetVariant.id}`);
+            } else {
+              logger.warn(`⚠️ Option ID not found for option name: ${selectedOption.name}`);
+            }
+          }
+        } else if (variantExists) {
+          console.log(`⏭️ Skipping options creation for existing variant ${targetVariant.id}`);
+        }
       }
     }
 
@@ -508,7 +613,7 @@ router.delete('/:id', async (req, res, next) => {
 router.post('/:id/variants', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { error, value } = variantSchema.validate(req.body);
+    const { error, value } = variantSchema.validate(req.body, { allowUnknown: true });
     
     if (error) {
       return res.status(400).json({
@@ -547,7 +652,7 @@ router.post('/:id/variants', async (req, res, next) => {
 router.put('/:productId/variants/:variantId', async (req, res, next) => {
   try {
     const { productId, variantId } = req.params;
-    const { error, value } = variantSchema.validate(req.body);
+    const { error, value } = variantSchema.validate(req.body, { allowUnknown: true });
     
     if (error) {
       return res.status(400).json({

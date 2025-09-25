@@ -436,4 +436,115 @@ router.post('/bulk-export', async (req, res, next) => {
   }
 });
 
+// POST /api/shopify/export-variant/:variantId - Export single variant to Shopify
+router.post('/export-variant/:variantId', async (req, res, next) => {
+  try {
+    const { variantId } = req.params;
+    const { force = false } = req.body;
+
+    // Fetch variant with product data
+    const variant = await Variant.findByPk(variantId, {
+      include: [{
+        model: Product,
+        as: 'product',
+        include: [
+          {
+            model: Category,
+            as: 'category'
+          },
+          {
+            model: Option,
+            as: 'options',
+            order: [['position', 'ASC']]
+          },
+          {
+            model: Image,
+            as: 'images',
+            order: [['position', 'ASC']]
+          }
+        ]
+      }]
+    });
+
+    if (!variant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Variant not found'
+      });
+    }
+
+    // Check if parent product is exported to Shopify
+    if (!variant.product.shopify_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Parent product must be exported to Shopify first',
+        details: 'Export the complete product before exporting individual variants'
+      });
+    }
+
+    // Check if variant already exists in Shopify (unless force is true)
+    if (variant.shopify_id && !force) {
+      return res.status(400).json({
+        success: false,
+        error: 'Variant already exported to Shopify. Use force=true to update.',
+        shopify_id: variant.shopify_id
+      });
+    }
+
+    try {
+      let shopifyResponse;
+      let isUpdate = false;
+
+      if (variant.shopify_id && force) {
+        // Update existing variant
+        const variantData = {
+          variant: ShopifyMapper.mapSingleVariantToShopify(variant)
+        };
+        shopifyResponse = await shopifyClient.updateVariant(variant.shopify_id, variantData);
+        isUpdate = true;
+        logger.info(`Variant ${variantId} updated in Shopify with ID ${variant.shopify_id}`);
+      } else {
+        // Create new variant in existing product
+        const variantData = {
+          variant: ShopifyMapper.mapSingleVariantToShopify(variant)
+        };
+        shopifyResponse = await shopifyClient.createVariantInProduct(variant.product.shopify_id, variantData);
+        logger.info(`Variant ${variantId} created in Shopify with ID ${shopifyResponse.variant.id}`);
+      }
+
+      // Update local variant with Shopify ID
+      await variant.update({
+        shopify_id: shopifyResponse.variant.id
+      });
+
+      res.json({
+        success: true,
+        data: {
+          variant_id: variant.id,
+          shopify_id: shopifyResponse.variant.id,
+          product_shopify_id: variant.product.shopify_id,
+          action: isUpdate ? 'updated' : 'created',
+          sku: shopifyResponse.variant.sku,
+          price: shopifyResponse.variant.price
+        },
+        message: `Variant ${isUpdate ? 'updated' : 'exported'} to Shopify successfully`
+      });
+
+    } catch (shopifyError) {
+      logger.error('Shopify API error during variant export:', shopifyError);
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to export variant to Shopify',
+        details: shopifyError.message,
+        shopify_errors: shopifyError.shopifyErrors
+      });
+    }
+
+  } catch (error) {
+    logger.error('Error exporting variant to Shopify:', error);
+    next(error);
+  }
+});
+
 module.exports = router;

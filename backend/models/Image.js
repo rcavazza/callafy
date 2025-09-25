@@ -17,7 +17,7 @@ module.exports = (sequelize) => {
     },
     variant_id: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: false,
       references: {
         model: 'variants',
         key: 'id'

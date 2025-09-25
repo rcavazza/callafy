@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Joi = require('joi');
-const { Product, Variant, Option, VariantOption } = require('../models');
+const { Product, Variant, Option, VariantOption, Image } = require('../models');
 const logger = require('../config/logger');
+const { uploadMultiple } = require('../middleware/upload');
 
 // Validation schemas
 const generateVariantsSchema = Joi.object({
@@ -481,6 +482,207 @@ router.delete('/products/:productId/variants/:variantId', async (req, res) => {
   } catch (error) {
     logger.error('Error deleting variant:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ===== IMAGE MANAGEMENT ROUTES FOR VARIANTS =====
+
+// GET /api/variants/:variantId/images - Get images for a specific variant
+router.get('/variants/:variantId/images', async (req, res, next) => {
+  try {
+    const { variantId } = req.params;
+
+    // Check if variant exists
+    const variant = await Variant.findByPk(variantId);
+    if (!variant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Variant not found'
+      });
+    }
+
+    const images = await Image.findAll({
+      where: { variant_id: variantId },
+      include: [
+        {
+          model: Product,
+          as: 'product',
+          attributes: ['id', 'title']
+        },
+        {
+          model: Variant,
+          as: 'variant',
+          attributes: ['id', 'sku']
+        }
+      ],
+      order: [['position', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: images
+    });
+
+  } catch (error) {
+    logger.error('Error fetching variant images:', error);
+    next(error);
+  }
+});
+
+// POST /api/variants/:variantId/images/upload - Upload images for a specific variant
+router.post('/variants/:variantId/images/upload', uploadMultiple('images', 10), async (req, res, next) => {
+  try {
+    const { variantId } = req.params;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No image files provided'
+      });
+    }
+
+    // Check if variant exists
+    const variant = await Variant.findByPk(variantId, {
+      include: [{ model: Product, as: 'product' }]
+    });
+    if (!variant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Variant not found'
+      });
+    }
+
+    const { alt_text } = req.body;
+    const createdImages = [];
+    const uploadedFiles = [];
+
+    // Create image records for all uploaded files
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
+      
+      const imageData = {
+        product_id: variant.product_id,
+        variant_id: parseInt(variantId),
+        src: `/uploads/${file.filename}`,
+        alt_text: alt_text || '',
+        position: i + 1,
+        width: null,
+        height: null,
+        size: file.size,
+        filename: file.originalname
+      };
+
+      const image = await Image.create(imageData);
+      
+      // Fetch created image with relations
+      const createdImage = await Image.findByPk(image.id, {
+        include: [
+          {
+            model: Product,
+            as: 'product',
+            attributes: ['id', 'title']
+          },
+          {
+            model: Variant,
+            as: 'variant',
+            attributes: ['id', 'sku']
+          }
+        ]
+      });
+
+      createdImages.push(createdImage);
+      uploadedFiles.push({
+        filename: file.filename,
+        originalname: file.originalname,
+        size: file.size,
+        url: `/uploads/${file.filename}`
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      data: createdImages,
+      files: uploadedFiles,
+      count: createdImages.length,
+      message: `${createdImages.length} images uploaded successfully for variant`
+    });
+
+  } catch (error) {
+    logger.error('Error uploading variant images:', error);
+    next(error);
+  }
+});
+
+// DELETE /api/variants/:variantId/images/:imageId - Delete specific image from variant
+router.delete('/variants/:variantId/images/:imageId', async (req, res, next) => {
+  try {
+    const { variantId, imageId } = req.params;
+
+    const image = await Image.findOne({
+      where: {
+        id: imageId,
+        variant_id: variantId
+      }
+    });
+
+    if (!image) {
+      return res.status(404).json({
+        success: false,
+        error: 'Image not found for this variant'
+      });
+    }
+
+    await image.destroy();
+
+    res.json({
+      success: true,
+      message: 'Image deleted successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error deleting variant image:', error);
+    next(error);
+  }
+});
+
+// PUT /api/variants/:variantId/images/:imageId/position - Update image position within variant
+router.put('/variants/:variantId/images/:imageId/position', async (req, res, next) => {
+  try {
+    const { variantId, imageId } = req.params;
+    const { position } = req.body;
+
+    if (!position || position < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'Position must be a positive integer'
+      });
+    }
+
+    const image = await Image.findOne({
+      where: {
+        id: imageId,
+        variant_id: variantId
+      }
+    });
+
+    if (!image) {
+      return res.status(404).json({
+        success: false,
+        error: 'Image not found for this variant'
+      });
+    }
+
+    await image.update({ position });
+
+    res.json({
+      success: true,
+      data: image,
+      message: 'Image position updated successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error updating variant image position:', error);
+    next(error);
   }
 });
 

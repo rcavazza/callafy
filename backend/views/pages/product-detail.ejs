@@ -227,6 +227,242 @@
             background: #fed7d7;
             border-radius: 6px;
         }
+        
+        /* IMAGE MANAGEMENT STYLES */
+        .variant-images-section {
+            margin-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1.5rem;
+        }
+        
+        .images-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .images-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            color: #4a5568;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            background: #f7fafc;
+            border-color: #cbd5e0;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .btn-outline {
+            background: transparent;
+        }
+        
+        .btn-danger {
+            background: #fed7d7;
+            color: #742a2a;
+            border-color: #feb2b2;
+        }
+        
+        .btn-danger:hover {
+            background: #feb2b2;
+        }
+        
+        .images-content {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+        }
+        
+        .images-upload-zone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            margin-bottom: 1rem;
+        }
+        
+        .images-upload-zone:hover {
+            border-color: #3182ce;
+            background: #ebf8ff;
+        }
+        
+        .images-upload-zone.drag-over {
+            border-color: #3182ce;
+            background: #ebf8ff;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-text {
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+        }
+        
+        .upload-subtext {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        
+        .images-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .image-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        
+        .image-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .image-preview {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            overflow: hidden;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .image-item:hover .image-preview img {
+            transform: scale(1.05);
+        }
+        
+        .image-info {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .image-filename {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .image-size {
+            font-size: 0.75rem;
+            color: #718096;
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            background: #f7fafc;
+        }
+        
+        .no-images {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+            font-style: italic;
+        }
+        
+        /* Section header with actions */
+        .section-header-with-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+        
+        .btn-create-variants {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .btn-create-variants:hover {
+            background: #2c5aa0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+        }
+        
+        .btn-create-variants:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .images-gallery {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 0.75rem;
+            }
+            
+            .image-preview {
+                height: 120px;
+            }
+            
+            .images-upload-zone {
+                padding: 1.5rem;
+            }
+            
+            .section-header-with-actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            
+            .btn-create-variants {
+                align-self: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
@@ -275,6 +511,27 @@
                         <span class="meta-value" id="productTags">-</span>
                     </div>
                 </div>
+                
+                <!-- NUOVO: Export Actions -->
+                <div class="product-export-actions">
+                    <div class="export-dashboard">
+                        <div class="export-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Prodotto:</span>
+                                <span id="productExportSummary" class="summary-status">⚪ Mai esportato</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Varianti:</span>
+                                <span id="variantsExportSummary" class="summary-status">0/0 esportate</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="exportProductBtn" class="btn btn-shopify" onclick="exportProduct()">
+                        <span class="btn-icon">🛒</span>
+                        <span class="btn-text">Esporta su Shopify</span>
+                        <span id="productExportStatus" class="export-status"></span>
+                    </button>
+                </div>
             </div>
             
             <!-- Product Options -->
@@ -289,10 +546,20 @@
             
             <!-- Product Variants -->
             <div class="product-section" id="variantsSection">
-                <h2 class="section-title">
-                    📦 Varianti Prodotto
-                    <span id="variantsCount" class="text-sm text-gray-500 font-normal">-</span>
-                </h2>
+                <div class="section-header-with-actions">
+                    <h2 class="section-title">
+                        📦 Varianti Prodotto
+                        <span id="variantsCount" class="text-sm text-gray-500 font-normal">-</span>
+                    </h2>
+                    <button
+                        type="button"
+                        class="btn btn-primary btn-create-variants"
+                        onclick="navigateToVariantsManager()"
+                        title="Crea e gestisci le varianti per questo prodotto"
+                    >
+                        🔧 Crea Varianti
+                    </button>
+                </div>
                 <div id="variantsList" class="variants-grid">
                     <!-- Variants will be rendered here -->
                 </div>
@@ -309,7 +576,9 @@
             try {
                 console.log('🔍 Loading product:', productId);
                 
-                const response = await fetch(`/api/products/${productId}`);
+                // Add cache-busting parameter to ensure fresh data
+                const cacheBuster = Date.now();
+                const response = await fetch(`/api/products/${productId}?_t=${cacheBuster}`);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
@@ -321,6 +590,8 @@
                 
                 product = result.data;
                 console.log('✅ Product loaded:', product);
+                console.log('📦 Product variants:', product.variants);
+                console.log('📋 Product options:', product.options);
                 
                 renderProduct();
                 
@@ -403,6 +674,15 @@
                     <div class="variant-header">
                         <div class="variant-title">Variante ${index + 1}</div>
                         <div class="variant-price">€${parseFloat(variant.price || 0).toFixed(2)}</div>
+                        <div class="variant-actions">
+                            <button class="btn btn-shopify-variant"
+                                    onclick="exportVariant(${variant.id}, ${index})"
+                                    id="exportVariantBtn-${index}">
+                                <span class="btn-icon">🛒</span>
+                                <span class="btn-text">Export</span>
+                                <span id="variantExportStatus-${index}" class="export-status-sm"></span>
+                            </button>
+                        </div>
                     </div>
                     
                     ${variant.selectedOptions && variant.selectedOptions.length > 0 ? `
@@ -437,6 +717,36 @@
                             </div>
                         ` : ''}
                     </div>
+                    
+                    <!-- Images Section -->
+                    <div class="variant-images-section">
+                        <div class="images-header">
+                            <h4 class="images-title">📸 Immagini Variante</h4>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="toggleVariantImages(${index})">
+                                <span id="toggle-images-${index}">▼ Mostra</span>
+                            </button>
+                        </div>
+                        <div class="images-content" id="images-content-${index}" style="display: none;">
+                            <div class="images-upload-zone"
+                                 ondrop="handleImageDrop(event, ${index})"
+                                 ondragover="handleImageDragOver(event)"
+                                 ondragleave="handleImageDragLeave(event)"
+                                 onclick="triggerImageUpload(${index})">
+                                <div class="upload-icon">📤</div>
+                                <div class="upload-text">Trascina immagini qui o clicca per selezionare</div>
+                                <div class="upload-subtext">JPG, PNG, GIF, WEBP (max 5MB)</div>
+                                <input type="file"
+                                       id="image-input-${index}"
+                                       multiple
+                                       accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                       style="display: none;"
+                                       onchange="handleImageSelect(event, ${index})">
+                            </div>
+                            <div class="images-gallery" id="images-gallery-${index}">
+                                <div class="no-images">Nessuna immagine caricata</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `).join('');
         }
@@ -459,8 +769,514 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📄 Product detail page initialized');
+            
+            // Check if we're returning from variants manager
+            const urlParams = new URLSearchParams(window.location.search);
+            const refreshParam = urlParams.get('refresh');
+            
+            if (refreshParam === 'variants') {
+                console.log('🔄 Returning from variants manager, showing refresh notification');
+                showNotification('Varianti aggiornate! Ricaricamento dati...', 'success');
+                
+                // Clean URL by removing the refresh parameter
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+            
             loadProduct();
         });
+        
+        // ===== IMAGE MANAGEMENT FUNCTIONS =====
+        
+        function toggleVariantImages(variantIndex) {
+            const content = document.getElementById(`images-content-${variantIndex}`);
+            const toggle = document.getElementById(`toggle-images-${variantIndex}`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▲ Nascondi';
+                // Load images if not already loaded
+                loadVariantImages(variantIndex);
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▼ Mostra';
+            }
+        }
+        
+        async function loadVariantImages(variantIndex) {
+            const variant = product.variants[variantIndex];
+            if (!variant || !variant.id) return;
+            
+            try {
+                const response = await fetch(`/api/variants/${variant.id}/images`);
+                if (!response.ok) return;
+                
+                const result = await response.json();
+                if (result.success) {
+                    variant.images = result.data || [];
+                    updateImagesGallery(variantIndex);
+                }
+            } catch (error) {
+                console.error('Error loading variant images:', error);
+            }
+        }
+        
+        function updateImagesGallery(variantIndex) {
+            const gallery = document.getElementById(`images-gallery-${variantIndex}`);
+            if (gallery) {
+                gallery.innerHTML = renderVariantImages(product.variants[variantIndex].images || [], variantIndex);
+            }
+        }
+        
+        function renderVariantImages(images, variantIndex) {
+            if (!images || images.length === 0) {
+                return '<div class="no-images">Nessuna immagine caricata</div>';
+            }
+            
+            return images.map((image, imageIndex) => `
+                <div class="image-item" data-image-id="${image.id}">
+                    <div class="image-preview">
+                        <img src="${image.src}" alt="${image.alt_text || ''}" loading="lazy">
+                    </div>
+                    <div class="image-info">
+                        <div class="image-filename">${image.filename || 'Immagine'}</div>
+                        <div class="image-size">${formatFileSize(image.size)}</div>
+                    </div>
+                    <div class="image-actions">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="moveImageUp(${variantIndex}, ${imageIndex})" ${imageIndex === 0 ? 'disabled' : ''}>↑</button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="moveImageDown(${variantIndex}, ${imageIndex})" ${imageIndex === images.length - 1 ? 'disabled' : ''}>↓</button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeImage(${variantIndex}, ${imageIndex})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function triggerImageUpload(variantIndex) {
+            const input = document.getElementById(`image-input-${variantIndex}`);
+            input.click();
+        }
+        
+        function handleImageSelect(event, variantIndex) {
+            const files = Array.from(event.target.files);
+            uploadImages(files, variantIndex);
+        }
+        
+        function handleImageDrop(event, variantIndex) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const uploadZone = event.currentTarget;
+            uploadZone.classList.remove('drag-over');
+            
+            const files = Array.from(event.dataTransfer.files).filter(file =>
+                file.type.startsWith('image/')
+            );
+            
+            if (files.length > 0) {
+                uploadImages(files, variantIndex);
+            }
+        }
+        
+        function handleImageDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.classList.add('drag-over');
+        }
+        
+        function handleImageDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.classList.remove('drag-over');
+        }
+        
+        async function uploadImages(files, variantIndex) {
+            const variant = product.variants[variantIndex];
+            if (!variant.id) {
+                showNotification('Errore: ID variante non trovato', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            files.forEach(file => {
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    showNotification(`File ${file.name} troppo grande (max 5MB)`, 'error');
+                    return;
+                }
+                formData.append('images', file);
+            });
+            
+            try {
+                showNotification(`Caricamento ${files.length} immagini...`, 'info');
+                
+                const response = await fetch(`/api/variants/${variant.id}/images/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    variant.images = variant.images || [];
+                    variant.images.push(...result.data);
+                    updateImagesGallery(variantIndex);
+                    showNotification(`${result.count} immagini caricate con successo`, 'success');
+                } else {
+                    showNotification(result.error || 'Errore durante il caricamento', 'error');
+                }
+            } catch (error) {
+                console.error('Error uploading images:', error);
+                showNotification('Errore durante il caricamento delle immagini', 'error');
+            }
+        }
+        
+        async function removeImage(variantIndex, imageIndex) {
+            const variant = product.variants[variantIndex];
+            const image = variant.images[imageIndex];
+            
+            if (!image || !image.id) return;
+            
+            if (!confirm('Sei sicuro di voler eliminare questa immagine?')) return;
+            
+            try {
+                const response = await fetch(`/api/variants/${variant.id}/images/${image.id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    variant.images.splice(imageIndex, 1);
+                    updateImagesGallery(variantIndex);
+                    showNotification('Immagine eliminata con successo', 'success');
+                } else {
+                    showNotification(result.error || 'Errore durante l\'eliminazione', 'error');
+                }
+            } catch (error) {
+                console.error('Error removing image:', error);
+                showNotification('Errore durante l\'eliminazione dell\'immagine', 'error');
+            }
+        }
+        
+        async function moveImageUp(variantIndex, imageIndex) {
+            if (imageIndex === 0) return;
+            
+            const variant = product.variants[variantIndex];
+            const image = variant.images[imageIndex];
+            
+            await updateImagePosition(variant.id, image.id, imageIndex);
+            
+            // Swap in local array
+            [variant.images[imageIndex], variant.images[imageIndex - 1]] =
+            [variant.images[imageIndex - 1], variant.images[imageIndex]];
+            
+            updateImagesGallery(variantIndex);
+        }
+        
+        async function moveImageDown(variantIndex, imageIndex) {
+            const variant = product.variants[variantIndex];
+            if (imageIndex === variant.images.length - 1) return;
+            
+            const image = variant.images[imageIndex];
+            
+            await updateImagePosition(variant.id, image.id, imageIndex + 2);
+            
+            // Swap in local array
+            [variant.images[imageIndex], variant.images[imageIndex + 1]] =
+            [variant.images[imageIndex + 1], variant.images[imageIndex]];
+            
+            updateImagesGallery(variantIndex);
+        }
+        
+        async function updateImagePosition(variantId, imageId, newPosition) {
+            try {
+                const response = await fetch(`/api/variants/${variantId}/images/${imageId}/position`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ position: newPosition })
+                });
+                
+                const result = await response.json();
+                if (!result.success) {
+                    console.error('Error updating image position:', result.error);
+                }
+            } catch (error) {
+                console.error('Error updating image position:', error);
+            }
+        }
+        
+        function showNotification(message, type = 'info') {
+            // Simple notification system
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 6px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                max-width: 300px;
+                word-wrap: break-word;
+                ${type === 'success' ? 'background: #38a169;' : ''}
+                ${type === 'error' ? 'background: #e53e3e;' : ''}
+                ${type === 'info' ? 'background: #3182ce;' : ''}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        // Navigate to variants manager for this product
+        function navigateToVariantsManager() {
+            if (!productId) {
+                showNotification('Errore: ID prodotto non disponibile', 'error');
+                return;
+            }
+            
+            console.log('🔧 Navigating to variants manager for product:', productId);
+            
+            // Navigate to the variants manager with the current product ID
+            window.location.href = `/variants-manager/${productId}`;
+        }
+        
+        // ===== SHOPIFY EXPORT FUNCTIONS =====
+        
+        // Export status constants
+        const EXPORT_STATUS = {
+            NEVER_EXPORTED: {
+                icon: '⚪',
+                text: 'Mai esportato',
+                class: 'status-never',
+                color: '#6b7280'
+            },
+            EXPORTED: {
+                icon: '✅',
+                text: 'Esportato',
+                class: 'status-exported',
+                color: '#10b981'
+            },
+            EXPORTING: {
+                icon: '⏳',
+                text: 'Esportando...',
+                class: 'status-exporting',
+                color: '#3b82f6'
+            },
+            ERROR: {
+                icon: '❌',
+                text: 'Errore export',
+                class: 'status-error',
+                color: '#ef4444'
+            },
+            NEEDS_UPDATE: {
+                icon: '🔄',
+                text: 'Da aggiornare',
+                class: 'status-update',
+                color: '#f59e0b'
+            }
+        };
+        
+        // Export prodotto completo
+        async function exportProduct() {
+            if (!product || !product.id) {
+                showNotification('Errore: Prodotto non disponibile', 'error');
+                return;
+            }
+
+            const exportBtn = document.getElementById('exportProductBtn');
+            const statusElement = document.getElementById('productExportStatus');
+            
+            try {
+                // Update UI
+                exportBtn.disabled = true;
+                exportBtn.classList.add('btn-loading');
+                updateExportStatus(statusElement, 'EXPORTING');
+                
+                const response = await fetch(`/api/shopify/export/${product.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        force: product.shopify_id ? true : false
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    product.shopify_id = result.data.shopify_id;
+                    updateExportStatus(statusElement, 'EXPORTED');
+                    showNotification('Prodotto esportato su Shopify con successo!', 'success');
+                    
+                    // Aggiorna anche gli stati delle varianti se presenti
+                    if (result.data.variants_count > 0) {
+                        updateVariantsExportStatus();
+                    }
+                    
+                    // Aggiorna il summary
+                    updateExportSummary();
+                } else {
+                    updateExportStatus(statusElement, 'ERROR');
+                    showNotification(result.error || 'Errore durante l\'export', 'error');
+                }
+
+            } catch (error) {
+                console.error('Export error:', error);
+                updateExportStatus(statusElement, 'ERROR');
+                showNotification('Errore di connessione durante l\'export', 'error');
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.classList.remove('btn-loading');
+            }
+        }
+
+        // Export singola variante
+        async function exportVariant(variantId, variantIndex) {
+            if (!variantId) {
+                showNotification('Errore: ID variante non disponibile', 'error');
+                return;
+            }
+
+            const exportBtn = document.getElementById(`exportVariantBtn-${variantIndex}`);
+            const statusElement = document.getElementById(`variantExportStatus-${variantIndex}`);
+            const variant = product.variants[variantIndex];
+            
+            try {
+                exportBtn.disabled = true;
+                exportBtn.classList.add('btn-loading');
+                updateExportStatus(statusElement, 'EXPORTING');
+                
+                const response = await fetch(`/api/shopify/export-variant/${variantId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        force: variant.shopify_id ? true : false
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    variant.shopify_id = result.data.shopify_id;
+                    updateExportStatus(statusElement, 'EXPORTED');
+                    showNotification(`Variante ${variantIndex + 1} esportata con successo!`, 'success');
+                    
+                    // Aggiorna il summary
+                    updateExportSummary();
+                } else {
+                    updateExportStatus(statusElement, 'ERROR');
+                    showNotification(result.error || 'Errore durante l\'export della variante', 'error');
+                }
+
+            } catch (error) {
+                console.error('Variant export error:', error);
+                updateExportStatus(statusElement, 'ERROR');
+                showNotification('Errore di connessione durante l\'export della variante', 'error');
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.classList.remove('btn-loading');
+            }
+        }
+
+        // Aggiorna indicatore stato export
+        function updateExportStatus(element, status) {
+            const statusConfig = EXPORT_STATUS[status];
+            if (statusConfig && element) {
+                element.innerHTML = `${statusConfig.icon} ${statusConfig.text}`;
+                element.className = `export-status ${statusConfig.class}`;
+                element.style.color = statusConfig.color;
+            }
+        }
+
+        // Determina stato export iniziale
+        function getExportStatus(item) {
+            if (!item.shopify_id) return 'NEVER_EXPORTED';
+            // Qui potresti aggiungere logica per determinare se serve un update
+            // if (item.updatedAt > item.shopify_updated_at) return 'NEEDS_UPDATE';
+            return 'EXPORTED';
+        }
+        
+        // Aggiorna stati export delle varianti dopo export prodotto
+        function updateVariantsExportStatus() {
+            if (!product.variants) return;
+            
+            product.variants.forEach((variant, index) => {
+                const statusElement = document.getElementById(`variantExportStatus-${index}`);
+                if (statusElement && variant.shopify_id) {
+                    updateExportStatus(statusElement, 'EXPORTED');
+                }
+            });
+        }
+        
+        // Aggiorna il summary degli export
+        function updateExportSummary() {
+            const productSummary = document.getElementById('productExportSummary');
+            const variantsSummary = document.getElementById('variantsExportSummary');
+            
+            if (productSummary) {
+                const productStatus = getExportStatus(product);
+                const statusConfig = EXPORT_STATUS[productStatus];
+                productSummary.innerHTML = `${statusConfig.icon} ${statusConfig.text}`;
+                productSummary.style.color = statusConfig.color;
+            }
+            
+            if (variantsSummary && product.variants) {
+                const exportedCount = product.variants.filter(v => v.shopify_id).length;
+                const totalCount = product.variants.length;
+                variantsSummary.innerHTML = `${exportedCount}/${totalCount} esportate`;
+                variantsSummary.style.color = exportedCount === totalCount ? '#10b981' : '#6b7280';
+            }
+        }
+        
+        // Inizializza stati export quando il prodotto viene caricato
+        function initializeExportStates() {
+            // Aggiorna il summary iniziale
+            updateExportSummary();
+            
+            // Aggiorna stato export prodotto
+            const productStatusElement = document.getElementById('productExportStatus');
+            if (productStatusElement) {
+                const productStatus = getExportStatus(product);
+                updateExportStatus(productStatusElement, productStatus);
+            }
+            
+            // Aggiorna stati export varianti
+            if (product.variants) {
+                product.variants.forEach((variant, index) => {
+                    const statusElement = document.getElementById(`variantExportStatus-${index}`);
+                    if (statusElement) {
+                        const variantStatus = getExportStatus(variant);
+                        updateExportStatus(statusElement, variantStatus);
+                    }
+                });
+            }
+        }
+        
+        // Modifica la funzione renderProduct per inizializzare gli stati export
+        const originalRenderProduct = renderProduct;
+        renderProduct = function() {
+            originalRenderProduct();
+            // Inizializza gli stati export dopo il rendering
+            setTimeout(initializeExportStates, 100);
+        };
     </script>
 </body>
 </html>
