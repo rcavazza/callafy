@@ -18,7 +18,16 @@ const storage = multer.diskStorage({
     // Generate unique filename: timestamp-originalname
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
+    let name = path.basename(file.originalname, ext);
+    
+    // Handle empty or problematic names
+    if (!name || name.trim() === '' || name.startsWith('.') || name.startsWith('-')) {
+      name = 'image'; // Default name for problematic filenames
+    }
+    
+    // Clean the name to avoid issues
+    name = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+    
     cb(null, `${name}-${uniqueSuffix}${ext}`);
   }
 });

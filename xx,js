@@ -1,0 +1,124 @@
+// index.js
+import fs from "fs";
+import axios from "axios";
+import { parse } from "json2csv";
+
+const BIRDEYE_API_KEY = process.env.BIRDEYE_API_KEY; // inserisci la tua API key free
+const BASE_URL = "https://public-api.birdeye.so";
+
+// 📌 funzione fetch transazioni
+async function fetchTransactions(tokenAddress, startTime, endTime) {
+  const url = `${BASE_URL}/defi/txs/token`;
+  const res = await axios.get(url, {
+    headers: { "X-API-KEY": BIRDEYE_API_KEY },
+    params: {
+      address: tokenAddress,
+      offset: 0,
+      limit: 1000,
+      sort: "desc",
+      txType: "swap",
+      from: startTime,
+      to: endTime,
+    },
+  });
+  return res.data.data?.items || [];
+}
+
+// 📌 parsing buy/sell
+function classifyTransactions(transactions, tokenAddress) {
+  const trades = {};
+  for (const tx of transactions) {
+    const wallet = tx.owner;
+    if (!wallet) continue;
+
+    if (!trades[wallet]) {
+      trades[wallet] = {
+        buys: [],
+        sells: [],
+      };
+    }
+
+    // Se token è in output → BUY, se token è in input → SELL
+    const isBuy = tx.tokenOut?.address === tokenAddress;
+    const isSell = tx.tokenIn?.address === tokenAddress;
+
+    if (isBuy) {
+      trades[wallet].buys.push({
+        amount: parseFloat(tx.tokenOut?.uiAmount || 0),
+        costSol: parseFloat(tx.tokenIn?.uiAmount || 0),
+        ts: tx.blockUnixTime,
+      });
+    }
+
+    if (isSell) {
+      trades[wallet].sells.push({
+        amount: parseFloat(tx.tokenIn?.uiAmount || 0),
+        receiveSol: parseFloat(tx.tokenOut?.uiAmount || 0),
+        ts: tx.blockUnixTime,
+      });
+    }
+  }
+  return trades;
+}
+
+// 📌 calcolo PnL + durata
+function calculatePnL(tradesByWallet) {
+  const results = [];
+  for (const [wallet, { buys, sells }] of Object.entries(tradesByWallet)) {
+    const solSpent = buys.reduce((sum, b) => sum + b.costSol, 0);
+    const solReceived = sells.reduce((sum, s) => sum + s.receiveSol, 0);
+
+    const pnl = solReceived - solSpent;
+    const pnlPercent = solSpent > 0 ? (pnl / solSpent) * 100 : 0;
+
+    // durata trade: dal primo buy all’ultima sell
+    let tradeDuration = null;
+    if (buys.length > 0 && sells.length > 0) {
+      const firstBuy = Math.min(...buys.map(b => b.ts));
+      const lastSell = Math.max(...sells.map(s => s.ts));
+      tradeDuration = lastSell - firstBuy; // in secondi
+    }
+
+    results.push({
+      wallet,
+      tokensBought: buys.reduce((sum, b) => sum + b.amount, 0),
+      tokensSold: sells.reduce((sum, s) => sum + s.amount, 0),
+      solSpent,
+      solReceived,
+      pnl,
+      pnlPercent,
+      tradeDuration, // in secondi
+    });
+  }
+  return results;
+}
+
+// 📌 salva CSV
+function saveCSV(data, filename = "output/report.csv") {
+  const csv = parse(data);
+  fs.writeFileSync(filename, csv);
+  console.log(`✅ Report salvato in ${filename}`);
+}
+
+// 📌 main
+async function main() {
+  const tokenAddress = process.argv[2]; // CA token
+  const startTime = parseInt(process.argv[3]); // Unix start
+  const endTime = parseInt(process.argv[4]);   // Unix end
+
+  if (!tokenAddress || !startTime || !endTime) {
+    console.error("Usage: node index.js <tokenCA> <startTime> <endTime>");
+    process.exit(1);
+  }
+
+  console.log("⏳ Fetching transactions...");
+  const txs = await fetchTransactions(tokenAddress, startTime, endTime);
+  console.log(`🔍 Trovate ${txs.length} transazioni`);
+
+  const tradesByWallet = classifyTransactions(txs, tokenAddress);
+  const results = calculatePnL(tradesByWallet);
+
+  saveCSV(results);
+}
+
+main();

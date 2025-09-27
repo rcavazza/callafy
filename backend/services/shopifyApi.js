@@ -1,4 +1,6 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const logger = require('../config/logger');
 
 class ShopifyApiClient {
@@ -444,6 +446,217 @@ class ShopifyApiClient {
     } catch (error) {
       logger.error(`Error deleting variant ${variantId}:`, error.message);
       throw this.createShopifyError('Failed to delete variant', error);
+    }
+  }
+
+  /**
+   * Upload image to Shopify product
+   * @param {number} productId - Shopify product ID
+   * @param {string} imagePath - Local path to image file
+   * @param {Object} imageData - Image metadata (alt_text, position, variant_ids)
+   * @returns {Promise<Object>} Shopify image response
+   */
+  async uploadImageToProduct(productId, imagePath, imageData = {}) {
+    try {
+      if (!this.isConfigured()) {
+        throw new Error('Shopify API not configured');
+      }
+
+      logger.info(`🖼️ [IMAGE_UPLOAD] Starting upload for product ${productId}, image: ${imagePath}`);
+
+      // Check if file exists
+      if (!fs.existsSync(imagePath)) {
+        throw new Error(`Image file not found: ${imagePath}`);
+      }
+
+      // Read and encode image file
+      const imageBuffer = fs.readFileSync(imagePath);
+      const base64Image = imageBuffer.toString('base64');
+      const fileExtension = path.extname(imagePath).toLowerCase();
+      
+      // Determine MIME type
+      const mimeTypes = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+      };
+      const mimeType = mimeTypes[fileExtension] || 'image/jpeg';
+
+      logger.info(`🖼️ [IMAGE_UPLOAD] Image encoded - Size: ${imageBuffer.length} bytes, Type: ${mimeType}`);
+
+      // Prepare image data for Shopify
+      const shopifyImageData = {
+        image: {
+          attachment: base64Image,
+          filename: path.basename(imagePath),
+          alt: imageData.alt_text || '',
+          position: imageData.position || 1
+        }
+      };
+
+      // Add variant IDs if specified
+      if (imageData.variant_ids && Array.isArray(imageData.variant_ids) && imageData.variant_ids.length > 0) {
+        shopifyImageData.image.variant_ids = imageData.variant_ids;
+        logger.info(`🖼️ [IMAGE_UPLOAD] Linking image to variants: ${imageData.variant_ids.join(', ')}`);
+      }
+
+      logger.info(`🖼️ [IMAGE_UPLOAD] Uploading to Shopify product ${productId}...`);
+
+      // Upload to Shopify
+      const response = await this.client.post(`/products/${productId}/images.json`, shopifyImageData);
+
+      logger.info(`✅ [IMAGE_UPLOAD] Successfully uploaded image to Shopify - Image ID: ${response.data.image.id}`);
+      logger.info(`🖼️ [IMAGE_UPLOAD] Image URL: ${response.data.image.src}`);
+      
+      if (response.data.image.variant_ids && response.data.image.variant_ids.length > 0) {
+        logger.info(`🔗 [IMAGE_UPLOAD] Image linked to variants: ${response.data.image.variant_ids.join(', ')}`);
+      }
+
+      return response.data;
+
+    } catch (error) {
+      logger.error(`❌ [IMAGE_UPLOAD] Error uploading image ${imagePath} to product ${productId}:`, error.message);
+      
+      if (error.response && error.response.data) {
+        logger.error(`❌ [IMAGE_UPLOAD] Shopify error details:`, error.response.data);
+      }
+      
+      throw this.createShopifyError('Failed to upload image to Shopify', error);
+    }
+  }
+
+  /**
+   * Upload multiple images to Shopify product
+   * @param {number} productId - Shopify product ID
+   * @param {Array} imagesData - Array of image objects with path and metadata
+   * @returns {Promise<Array>} Array of Shopify image responses
+   */
+  async uploadMultipleImagesToProduct(productId, imagesData) {
+    try {
+      if (!this.isConfigured()) {
+        throw new Error('Shopify API not configured');
+      }
+
+      logger.info(`🖼️ [MULTI_IMAGE_UPLOAD] Starting upload of ${imagesData.length} images to product ${productId}`);
+
+      const uploadResults = [];
+      const errors = [];
+
+      for (let i = 0; i < imagesData.length; i++) {
+        const imageInfo = imagesData[i];
+        
+        try {
+          logger.info(`🖼️ [MULTI_IMAGE_UPLOAD] Uploading image ${i + 1}/${imagesData.length}: ${imageInfo.path}`);
+          
+          const result = await this.uploadImageToProduct(productId, imageInfo.path, {
+            alt_text: imageInfo.alt_text,
+            position: imageInfo.position || (i + 1),
+            variant_ids: imageInfo.variant_ids
+          });
+
+          uploadResults.push({
+            success: true,
+            localPath: imageInfo.path,
+            shopifyImage: result.image,
+            variantIds: imageInfo.variant_ids
+          });
+
+          // Add small delay between uploads to avoid rate limiting
+          if (i < imagesData.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+
+        } catch (error) {
+          logger.error(`❌ [MULTI_IMAGE_UPLOAD] Failed to upload image ${imageInfo.path}:`, error.message);
+          
+          errors.push({
+            success: false,
+            localPath: imageInfo.path,
+            error: error.message,
+            variantIds: imageInfo.variant_ids
+          });
+
+          uploadResults.push({
+            success: false,
+            localPath: imageInfo.path,
+            error: error.message,
+            variantIds: imageInfo.variant_ids
+          });
+        }
+      }
+
+      const successCount = uploadResults.filter(r => r.success).length;
+      const errorCount = errors.length;
+
+      logger.info(`📊 [MULTI_IMAGE_UPLOAD] Upload completed - Success: ${successCount}, Errors: ${errorCount}`);
+
+      if (errors.length > 0) {
+        logger.warn(`⚠️ [MULTI_IMAGE_UPLOAD] Some images failed to upload:`, errors);
+      }
+
+      return {
+        results: uploadResults,
+        summary: {
+          total: imagesData.length,
+          successful: successCount,
+          failed: errorCount
+        }
+      };
+
+    } catch (error) {
+      logger.error(`❌ [MULTI_IMAGE_UPLOAD] Error in bulk image upload:`, error.message);
+      throw this.createShopifyError('Failed to upload multiple images', error);
+    }
+  }
+
+  /**
+   * Get images for a Shopify product
+   * @param {number} productId - Shopify product ID
+   * @returns {Promise<Array>} Array of product images
+   */
+  async getProductImages(productId) {
+    try {
+      if (!this.isConfigured()) {
+        throw new Error('Shopify API not configured');
+      }
+
+      logger.info(`🖼️ [GET_IMAGES] Fetching images for product ${productId}`);
+
+      const response = await this.client.get(`/products/${productId}/images.json`);
+
+      logger.info(`🖼️ [GET_IMAGES] Found ${response.data.images.length} images for product ${productId}`);
+
+      return response.data;
+
+    } catch (error) {
+      logger.error(`❌ [GET_IMAGES] Error fetching images for product ${productId}:`, error.message);
+      throw this.createShopifyError('Failed to fetch product images', error);
+    }
+  }
+
+  /**
+   * Delete image from Shopify product
+   * @param {number} productId - Shopify product ID
+   * @param {number} imageId - Shopify image ID
+   * @returns {Promise<void>}
+   */
+  async deleteProductImage(productId, imageId) {
+    try {
+      if (!this.isConfigured()) {
+        throw new Error('Shopify API not configured');
+      }
+
+      logger.info(`🗑️ [DELETE_IMAGE] Deleting image ${imageId} from product ${productId}`);
+
+      await this.client.delete(`/products/${productId}/images/${imageId}.json`);
+
+      logger.info(`✅ [DELETE_IMAGE] Successfully deleted image ${imageId} from product ${productId}`);
+
+    } catch (error) {
+      logger.error(`❌ [DELETE_IMAGE] Error deleting image ${imageId} from product ${productId}:`, error.message);
+      throw this.createShopifyError('Failed to delete product image', error);
     }
   }
 }

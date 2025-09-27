@@ -1,4 +1,6 @@
 const logger = require('../config/logger');
+const path = require('path');
+const fs = require('fs');
 
 class ShopifyMapper {
   /**
@@ -8,6 +10,8 @@ class ShopifyMapper {
    */
   static mapProductToShopify(product) {
     try {
+      logger.info(`🔄 [MAP_PRODUCT] Starting mapping for product ${product.id}: "${product.title}"`);
+
       const shopifyProduct = {
         product: {
           title: product.title,
@@ -18,7 +22,8 @@ class ShopifyMapper {
           handle: product.handle,
           status: this.mapProductStatus(product.status),
           variants: this.mapVariantsToShopify(product.variants || []),
-          images: this.mapImagesToShopify(product.images || []),
+          // NOTE: Images are now uploaded separately via uploadImagesAfterProductCreation
+          // images: this.mapImagesToShopify(product.images || []),
           options: this.mapOptionsToShopify(product.options || []),
           metafields: this.mapAttributesToMetafields(product.attributes || [])
         }
@@ -32,11 +37,13 @@ class ShopifyMapper {
         };
       }
 
-      logger.info(`Mapped product ${product.id} to Shopify format`);
+      logger.info(`✅ [MAP_PRODUCT] Successfully mapped product ${product.id} to Shopify format`);
+      logger.info(`📊 [MAP_PRODUCT] Product summary - Variants: ${shopifyProduct.product.variants.length}, Options: ${shopifyProduct.product.options.length}, Metafields: ${shopifyProduct.product.metafields.length}`);
+      
       return shopifyProduct;
 
     } catch (error) {
-      logger.error('Error mapping product to Shopify:', error);
+      logger.error(`❌ [MAP_PRODUCT] Error mapping product ${product.id} to Shopify:`, error);
       throw new Error(`Failed to map product ${product.id} to Shopify format: ${error.message}`);
     }
   }
@@ -136,11 +143,13 @@ class ShopifyMapper {
   }
 
   /**
-   * Map images to Shopify format
+   * Map images to Shopify format (DEPRECATED - use prepareImagesForUpload instead)
    * @param {Array} images - Array of image objects
    * @returns {Array} Shopify-formatted images
    */
   static mapImagesToShopify(images) {
+    logger.warn('⚠️ [DEPRECATED] mapImagesToShopify is deprecated. Use prepareImagesForUpload for direct upload to Shopify.');
+    
     if (!images || images.length === 0) {
       return [];
     }
@@ -170,6 +179,169 @@ class ShopifyMapper {
         return shopifyImage;
       })
       .filter(image => image !== null); // Remove null entries (localhost URLs)
+  }
+
+  /**
+   * Prepare images for direct upload to Shopify
+   * @param {Array} images - Array of image objects from database
+   * @param {Array} variants - Array of variant objects with shopify_id
+   * @returns {Array} Array of image data ready for upload
+   */
+  static prepareImagesForUpload(images, variants = []) {
+    if (!images || images.length === 0) {
+      logger.info('🖼️ [PREPARE_IMAGES] No images to prepare for upload');
+      return [];
+    }
+
+    logger.info(`🖼️ [PREPARE_IMAGES] Preparing ${images.length} images for Shopify upload`);
+
+    // Create a map of local variant ID to Shopify variant ID
+    const variantIdMap = new Map();
+    variants.forEach(variant => {
+      if (variant.shopify_id) {
+        variantIdMap.set(variant.id, variant.shopify_id);
+      }
+    });
+
+    logger.info(`🔗 [PREPARE_IMAGES] Created variant ID mapping for ${variantIdMap.size} variants`);
+
+    const preparedImages = [];
+
+    images
+      .sort((a, b) => a.position - b.position)
+      .forEach((image, index) => {
+        try {
+          logger.info(`🖼️ [PREPARE_IMAGES] Processing image ${index + 1}/${images.length}: ${image.src}`);
+          
+          // Get the full local path to the image
+          const imagePath = this.getLocalImagePath(image.src);
+          
+          logger.info(`🔍 [PREPARE_IMAGES] Resolved path: ${imagePath}`);
+
+          // Check if file exists
+          if (!fs.existsSync(imagePath)) {
+            logger.error(`❌ [PREPARE_IMAGES] Image file not found: ${imagePath}`);
+            
+            // Additional debug: list what's actually in the uploads directory
+            const uploadsDir = path.join(__dirname, '..', 'uploads');
+            if (fs.existsSync(uploadsDir)) {
+              const files = fs.readdirSync(uploadsDir);
+              logger.info(`📁 [PREPARE_IMAGES] Files in uploads directory: ${files.join(', ')}`);
+              
+              // Check if the filename exists with any prefix
+              const targetFilename = path.basename(image.src);
+              const matchingFiles = files.filter(f => f.includes(targetFilename.replace(/^-+/, '')));
+              if (matchingFiles.length > 0) {
+                logger.info(`🔍 [PREPARE_IMAGES] Found similar files: ${matchingFiles.join(', ')}`);
+              }
+            }
+            
+            return;
+          }
+          
+          logger.info(`✅ [PREPARE_IMAGES] File found: ${imagePath}`);
+
+          // Prepare variant IDs for Shopify
+          const shopifyVariantIds = [];
+          if (image.variant_id) {
+            const shopifyVariantId = variantIdMap.get(image.variant_id);
+            if (shopifyVariantId) {
+              shopifyVariantIds.push(shopifyVariantId);
+              logger.info(`🔗 [PREPARE_IMAGES] Image linked to variant: local_id=${image.variant_id} -> shopify_id=${shopifyVariantId}`);
+            } else {
+              logger.warn(`⚠️ [PREPARE_IMAGES] No Shopify ID found for variant ${image.variant_id}`);
+            }
+          }
+
+          const imageData = {
+            path: imagePath,
+            alt_text: image.alt_text || '',
+            position: image.position || (index + 1),
+            variant_ids: shopifyVariantIds,
+            localImageId: image.id,
+            localVariantId: image.variant_id
+          };
+
+          preparedImages.push(imageData);
+          
+          logger.info(`✅ [PREPARE_IMAGES] Prepared image: ${path.basename(imagePath)} (position: ${imageData.position}, variants: [${shopifyVariantIds.join(', ')}])`);
+
+        } catch (error) {
+          logger.error(`❌ [PREPARE_IMAGES] Error preparing image ${image.src}:`, error.message);
+        }
+      });
+
+    logger.info(`📊 [PREPARE_IMAGES] Successfully prepared ${preparedImages.length} images for upload`);
+    return preparedImages;
+  }
+
+  /**
+   * Get local file system path for an image
+   * @param {string} src - Image source path from database
+   * @returns {string} Full local file system path
+   */
+  static getLocalImagePath(src) {
+    if (!src) {
+      throw new Error('Image source is required');
+    }
+
+    logger.debug(`🔍 [GET_LOCAL_PATH] Input src: ${src}`);
+
+    // If it's already an absolute path and exists, return as is
+    if (path.isAbsolute(src) && require('fs').existsSync(src)) {
+      logger.debug(`🔍 [GET_LOCAL_PATH] Already absolute path and exists: ${src}`);
+      return src;
+    }
+
+    let resolvedPath;
+
+    // If it starts with /uploads/, remove the leading slash and join with backend directory
+    if (src.startsWith('/uploads/')) {
+      const relativePath = src.substring(1); // Remove leading slash: "uploads/filename.png"
+      resolvedPath = path.join(__dirname, '..', relativePath);
+    }
+    // If it starts with uploads/ (no leading slash), join with backend directory
+    else if (src.startsWith('uploads/')) {
+      resolvedPath = path.join(__dirname, '..', src);
+    }
+    // If it's just a filename, assume it's in uploads directory
+    else {
+      resolvedPath = path.join(__dirname, '..', 'uploads', src);
+    }
+    
+    logger.debug(`🔍 [GET_LOCAL_PATH] Initial resolved ${src} -> ${resolvedPath}`);
+    
+    // Check if file exists and log the result
+    const fileExists = require('fs').existsSync(resolvedPath);
+    logger.debug(`🔍 [GET_LOCAL_PATH] File exists at initial path: ${fileExists}`);
+    
+    if (fileExists) {
+      logger.debug(`✅ [GET_LOCAL_PATH] File found at: ${resolvedPath}`);
+      return resolvedPath;
+    }
+
+    // Try alternative paths if the main one doesn't exist
+    const alternatives = [
+      path.join(__dirname, '..', 'uploads', path.basename(src)),
+      path.join(process.cwd(), 'backend', 'uploads', path.basename(src)),
+      path.join(process.cwd(), 'uploads', path.basename(src))
+    ];
+    
+    logger.debug(`🔍 [GET_LOCAL_PATH] File not found at initial path, trying ${alternatives.length} alternatives...`);
+    
+    for (const altPath of alternatives) {
+      logger.debug(`🔍 [GET_LOCAL_PATH] Trying alternative: ${altPath}`);
+      if (require('fs').existsSync(altPath)) {
+        logger.info(`✅ [GET_LOCAL_PATH] Found file at alternative path: ${altPath}`);
+        return altPath;
+      }
+    }
+    
+    logger.error(`❌ [GET_LOCAL_PATH] File not found in any location for: ${src}`);
+    logger.error(`❌ [GET_LOCAL_PATH] Tried paths: ${[resolvedPath, ...alternatives].join(', ')}`);
+    
+    // Return the original resolved path even if file doesn't exist, so the error is clear
+    return resolvedPath;
   }
 
   /**

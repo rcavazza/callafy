@@ -104,22 +104,23 @@ router.post('/export/:productId', async (req, res, next) => {
       });
     }
 
-    // Map product to Shopify format
+    // Map product to Shopify format (without images)
     const shopifyProductData = ShopifyMapper.mapProductToShopify(product);
 
     let shopifyResponse;
     let isUpdate = false;
+    let imageUploadResults = null;
 
     try {
       if (product.shopify_id && force) {
         // Update existing product
         shopifyResponse = await shopifyClient.updateProduct(product.shopify_id, shopifyProductData);
         isUpdate = true;
-        logger.info(`Product ${productId} updated in Shopify with ID ${product.shopify_id}`);
+        logger.info(`🔄 [EXPORT] Product ${productId} updated in Shopify with ID ${product.shopify_id}`);
       } else {
         // Create new product
         shopifyResponse = await shopifyClient.createProduct(shopifyProductData);
-        logger.info(`Product ${productId} created in Shopify with ID ${shopifyResponse.product.id}`);
+        logger.info(`✅ [EXPORT] Product ${productId} created in Shopify with ID ${shopifyResponse.product.id}`);
       }
 
       // Update local product with Shopify data
@@ -135,22 +136,71 @@ router.post('/export/:productId', async (req, res, next) => {
           await localVariant.update({
             shopify_id: shopifyVariant.id
           });
+          
+          logger.info(`🔗 [EXPORT] Updated variant ${localVariant.id} with Shopify ID ${shopifyVariant.id}`);
         }
+      }
+
+      // Now upload images separately
+      if (product.images && product.images.length > 0) {
+        logger.info(`🖼️ [EXPORT] Starting image upload for ${product.images.length} images`);
+        
+        try {
+          // Prepare images for upload with updated variant IDs
+          const updatedVariants = await product.getVariants(); // Get fresh variant data with shopify_id
+          const imagesData = ShopifyMapper.prepareImagesForUpload(product.images, updatedVariants);
+          
+          if (imagesData.length > 0) {
+            // Upload images to Shopify
+            imageUploadResults = await shopifyClient.uploadMultipleImagesToProduct(
+              shopifyResponse.product.id,
+              imagesData
+            );
+            
+            logger.info(`📊 [EXPORT] Image upload completed - Success: ${imageUploadResults.summary.successful}, Failed: ${imageUploadResults.summary.failed}`);
+          } else {
+            logger.warn(`⚠️ [EXPORT] No valid images found for upload`);
+          }
+          
+        } catch (imageError) {
+          logger.error(`❌ [EXPORT] Error uploading images:`, imageError.message);
+          // Don't fail the entire export if images fail
+          imageUploadResults = {
+            summary: { total: product.images.length, successful: 0, failed: product.images.length },
+            error: imageError.message
+          };
+        }
+      }
+
+      const responseData = {
+        product_id: product.id,
+        shopify_id: shopifyResponse.product.id,
+        shopify_handle: shopifyResponse.product.handle,
+        action: isUpdate ? 'updated' : 'created',
+        variants_count: shopifyResponse.product.variants?.length || 0,
+        images_count: imageUploadResults ? imageUploadResults.summary.successful : 0,
+        images_failed: imageUploadResults ? imageUploadResults.summary.failed : 0,
+        metafields_count: shopifyProductData.product.metafields?.length || 0
+      };
+
+      // Add image upload details if available
+      if (imageUploadResults) {
+        responseData.image_upload_summary = imageUploadResults.summary;
+        if (imageUploadResults.error) {
+          responseData.image_upload_error = imageUploadResults.error;
+        }
+      }
+
+      const warnings = [...(validation.warnings || [])];
+      if (imageUploadResults && imageUploadResults.summary.failed > 0) {
+        warnings.push(`${imageUploadResults.summary.failed} images failed to upload to Shopify`);
       }
 
       res.json({
         success: true,
-        data: {
-          product_id: product.id,
-          shopify_id: shopifyResponse.product.id,
-          shopify_handle: shopifyResponse.product.handle,
-          action: isUpdate ? 'updated' : 'created',
-          variants_count: shopifyResponse.product.variants?.length || 0,
-          images_count: shopifyResponse.product.images?.length || 0,
-          metafields_count: shopifyProductData.product.metafields?.length || 0
-        },
+        data: responseData,
         message: `Product ${isUpdate ? 'updated' : 'exported'} to Shopify successfully`,
-        warnings: validation.warnings
+        warnings: warnings
       });
 
     } catch (shopifyError) {
@@ -339,15 +389,44 @@ router.get('/preview/:productId', async (req, res, next) => {
     // Map product to Shopify format
     const shopifyProductData = ShopifyMapper.mapProductToShopify(product);
 
+    // Prepare image upload preview
+    let imagePreview = null;
+    if (product.images && product.images.length > 0) {
+      try {
+        const imagesData = ShopifyMapper.prepareImagesForUpload(product.images, product.variants || []);
+        imagePreview = {
+          total_images: product.images.length,
+          uploadable_images: imagesData.length,
+          images_details: imagesData.map(img => ({
+            filename: require('path').basename(img.path),
+            position: img.position,
+            alt_text: img.alt_text,
+            variant_ids: img.variant_ids,
+            local_variant_id: img.localVariantId,
+            file_exists: require('fs').existsSync(img.path)
+          }))
+        };
+        
+        logger.info(`🔍 [PREVIEW] Image analysis - Total: ${imagePreview.total_images}, Uploadable: ${imagePreview.uploadable_images}`);
+      } catch (error) {
+        logger.error(`❌ [PREVIEW] Error analyzing images:`, error.message);
+        imagePreview = {
+          error: `Failed to analyze images: ${error.message}`
+        };
+      }
+    }
+
     res.json({
       success: true,
       data: {
         validation,
         shopify_data: shopifyProductData,
+        image_preview: imagePreview,
         summary: {
           title: product.title,
           variants_count: product.variants?.length || 0,
           images_count: product.images?.length || 0,
+          uploadable_images_count: imagePreview ? imagePreview.uploadable_images || 0 : 0,
           options_count: product.options?.length || 0,
           attributes_count: product.attributes?.length || 0,
           already_exported: !!product.shopify_id,
@@ -517,17 +596,77 @@ router.post('/export-variant/:variantId', async (req, res, next) => {
         shopify_id: shopifyResponse.variant.id
       });
 
+      let imageUploadResults = null;
+
+      // Upload images specific to this variant
+      if (variant.product.images && variant.product.images.length > 0) {
+        logger.info(`🖼️ [VARIANT_EXPORT] Checking images for variant ${variantId}`);
+        
+        // Filter images that belong to this specific variant
+        const variantImages = variant.product.images.filter(image => image.variant_id === variant.id);
+        
+        if (variantImages.length > 0) {
+          logger.info(`🖼️ [VARIANT_EXPORT] Found ${variantImages.length} images for variant ${variantId}`);
+          
+          try {
+            // Prepare images for upload with the updated variant Shopify ID
+            const updatedVariant = { ...variant.toJSON(), shopify_id: shopifyResponse.variant.id };
+            const imagesData = ShopifyMapper.prepareImagesForUpload(variantImages, [updatedVariant]);
+            
+            if (imagesData.length > 0) {
+              // Upload images to Shopify
+              imageUploadResults = await shopifyClient.uploadMultipleImagesToProduct(
+                variant.product.shopify_id,
+                imagesData
+              );
+              
+              logger.info(`📊 [VARIANT_EXPORT] Image upload completed - Success: ${imageUploadResults.summary.successful}, Failed: ${imageUploadResults.summary.failed}`);
+            } else {
+              logger.warn(`⚠️ [VARIANT_EXPORT] No valid images found for upload`);
+            }
+            
+          } catch (imageError) {
+            logger.error(`❌ [VARIANT_EXPORT] Error uploading images for variant ${variantId}:`, imageError.message);
+            // Don't fail the entire export if images fail
+            imageUploadResults = {
+              summary: { total: variantImages.length, successful: 0, failed: variantImages.length },
+              error: imageError.message
+            };
+          }
+        } else {
+          logger.info(`ℹ️ [VARIANT_EXPORT] No images found specifically for variant ${variantId}`);
+        }
+      }
+
+      const responseData = {
+        variant_id: variant.id,
+        shopify_id: shopifyResponse.variant.id,
+        product_shopify_id: variant.product.shopify_id,
+        action: isUpdate ? 'updated' : 'created',
+        sku: shopifyResponse.variant.sku,
+        price: shopifyResponse.variant.price,
+        images_count: imageUploadResults ? imageUploadResults.summary.successful : 0,
+        images_failed: imageUploadResults ? imageUploadResults.summary.failed : 0
+      };
+
+      // Add image upload details if available
+      if (imageUploadResults) {
+        responseData.image_upload_summary = imageUploadResults.summary;
+        if (imageUploadResults.error) {
+          responseData.image_upload_error = imageUploadResults.error;
+        }
+      }
+
+      const warnings = [];
+      if (imageUploadResults && imageUploadResults.summary.failed > 0) {
+        warnings.push(`${imageUploadResults.summary.failed} images failed to upload to Shopify`);
+      }
+
       res.json({
         success: true,
-        data: {
-          variant_id: variant.id,
-          shopify_id: shopifyResponse.variant.id,
-          product_shopify_id: variant.product.shopify_id,
-          action: isUpdate ? 'updated' : 'created',
-          sku: shopifyResponse.variant.sku,
-          price: shopifyResponse.variant.price
-        },
-        message: `Variant ${isUpdate ? 'updated' : 'exported'} to Shopify successfully`
+        data: responseData,
+        message: `Variant ${isUpdate ? 'updated' : 'exported'} to Shopify successfully`,
+        warnings: warnings
       });
 
     } catch (shopifyError) {
