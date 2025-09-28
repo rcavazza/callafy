@@ -70,6 +70,11 @@ Il processo di export di singola variante ora include:
 - `🔍 [PREVIEW]`: Anteprima export
 - `🔄 [EXPORT]`: Processo export generale
 - `🖼️ [VARIANT_EXPORT]`: Upload immagini per singola variante
+- `🚀 [CREATE_PRODUCT]`: Creazione prodotto su Shopify
+- `🔗 [TEST_CONNECTION]`: Test connessione Shopify
+- `🔄 [MAP_PRODUCT]`: Mapping prodotto a formato Shopify
+- `🔍 [VALIDATE_PRODUCT]`: Validazione prodotto
+- `🔍 [GET_LOCAL_PATH]`: Risoluzione percorsi file
 
 ### Informazioni Tracciate
 
@@ -191,11 +196,60 @@ curl -X POST http://localhost:3001/api/shopify/export-variant/456 \
 
 ## Risoluzione Problemi
 
+### Errori di Creazione Prodotto
+
+#### "Error creating product in Shopify"
+
+**Possibili cause e soluzioni:**
+
+1. **Credenziali Shopify non configurate**
+   ```bash
+   # Verifica nel file .env
+   SHOPIFY_SHOP_DOMAIN=your-shop.myshopify.com
+   SHOPIFY_ACCESS_TOKEN=your-access-token
+   ```
+   - Controlla i log: `🔗 [TEST_CONNECTION]`
+   - Testa la connessione: `GET /api/shopify/test`
+
+2. **Dati prodotto non validi**
+   - Controlla i log: `🔍 [VALIDATE_PRODUCT]` e `🔄 [MAP_PRODUCT]`
+   - Verifica che il prodotto abbia almeno:
+     - `title` (obbligatorio)
+     - `variants` con `price` valido
+     - `handle` unico (generato automaticamente se mancante)
+
+3. **Errori API Shopify specifici**
+   - Controlla i log: `🚀 [CREATE_PRODUCT]`
+   - Verifica i dettagli dell'errore nei log:
+     ```
+     shopifyErrors: {...}
+     status: 422
+     ```
+
+4. **Handle duplicato**
+   - Shopify richiede handle unici
+   - Il sistema genera automaticamente handle da title
+   - Modifica il title o specifica un handle custom
+
+#### Debug dettagliato per errori di creazione:
+
+```bash
+# 1. Testa la connessione
+curl http://localhost:3001/api/shopify/test
+
+# 2. Visualizza preview del prodotto
+curl http://localhost:3001/api/shopify/preview/123
+
+# 3. Controlla i log durante l'export
+tail -f logs/app.log | grep -E "(CREATE_PRODUCT|VALIDATE_PRODUCT|MAP_PRODUCT)"
+```
+
 ### Immagini Non Caricate
 
 1. **Verificare esistenza file**: Controllare che i file esistano in `backend/uploads/`
 2. **Controllare permessi**: Assicurarsi che l'applicazione possa leggere i file
 3. **Verificare log**: Cercare errori nei log con prefisso `❌ [IMAGE_UPLOAD]`
+4. **Controllare percorsi**: Verificare i log `🔍 [GET_LOCAL_PATH]`
 
 ### Collegamento Varianti Errato
 

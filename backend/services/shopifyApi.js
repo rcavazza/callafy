@@ -101,15 +101,38 @@ class ShopifyApiClient {
         throw new Error('Shopify API not configured');
       }
 
-      logger.info('Creating product in Shopify:', productData.product.title);
+      logger.info(`🚀 [CREATE_PRODUCT] Creating product in Shopify: "${productData.product.title}"`);
+      logger.info(`🔍 [CREATE_PRODUCT] Product data summary:`, {
+        title: productData.product.title,
+        variants_count: productData.product.variants?.length || 0,
+        options_count: productData.product.options?.length || 0,
+        metafields_count: productData.product.metafields?.length || 0,
+        has_handle: !!productData.product.handle,
+        status: productData.product.status
+      });
+      
+      // Log the full product data for debugging (but sanitize sensitive info)
+      logger.debug(`🔍 [CREATE_PRODUCT] Full product data:`, JSON.stringify(productData, null, 2));
       
       const response = await this.client.post('/products.json', productData);
       
-      logger.info(`Product created in Shopify with ID: ${response.data.product.id}`);
+      logger.info(`✅ [CREATE_PRODUCT] Product created successfully with ID: ${response.data.product.id}`);
       return response.data;
 
     } catch (error) {
-      logger.error('Error creating product in Shopify:', error.message);
+      logger.error(`❌ [CREATE_PRODUCT] Error creating product in Shopify:`, {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        shopifyErrors: error.response?.data?.errors,
+        shopifyData: error.response?.data
+      });
+      
+      // Log the product data that caused the error
+      if (error.response?.status >= 400) {
+        logger.error(`❌ [CREATE_PRODUCT] Product data that caused error:`, JSON.stringify(productData, null, 2));
+      }
+      
       throw this.createShopifyError('Failed to create product', error);
     }
   }
@@ -250,15 +273,20 @@ class ShopifyApiClient {
   async testConnection() {
     try {
       if (!this.isConfigured()) {
+        logger.warn('🔧 [TEST_CONNECTION] Shopify API not configured');
         return {
           success: false,
-          error: 'Shopify API not configured'
+          error: 'Shopify API not configured - check SHOPIFY_SHOP_DOMAIN and SHOPIFY_ACCESS_TOKEN'
         };
       }
 
-      logger.info('Testing Shopify API connection');
+      logger.info('🔗 [TEST_CONNECTION] Testing Shopify API connection...');
+      logger.info(`🔗 [TEST_CONNECTION] Shop domain: ${this.shopDomain}`);
+      logger.info(`🔗 [TEST_CONNECTION] API version: ${this.apiVersion}`);
       
       const response = await this.client.get('/shop.json');
+      
+      logger.info(`✅ [TEST_CONNECTION] Connection successful to shop: ${response.data.shop.name}`);
       
       return {
         success: true,
@@ -267,10 +295,21 @@ class ShopifyApiClient {
       };
 
     } catch (error) {
-      logger.error('Shopify API connection test failed:', error.message);
+      logger.error('❌ [TEST_CONNECTION] Shopify API connection test failed:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        shopifyErrors: error.response?.data?.errors,
+        baseURL: this.baseURL
+      });
+      
       return {
         success: false,
-        error: error.message
+        error: error.message,
+        details: {
+          status: error.response?.status,
+          shopifyErrors: error.response?.data?.errors
+        }
       };
     }
   }

@@ -12,14 +12,19 @@ class ShopifyMapper {
     try {
       logger.info(`🔄 [MAP_PRODUCT] Starting mapping for product ${product.id}: "${product.title}"`);
 
+      // Validate required fields
+      if (!product.title || product.title.trim() === '') {
+        throw new Error('Product title is required and cannot be empty');
+      }
+
       const shopifyProduct = {
         product: {
-          title: product.title,
+          title: product.title.trim(),
           body_html: product.description || '',
           vendor: product.vendor || '',
           product_type: product.product_type || '',
           tags: product.tags || '',
-          handle: product.handle,
+          handle: product.handle || this.generateHandle(product.title),
           status: this.mapProductStatus(product.status),
           variants: this.mapVariantsToShopify(product.variants || []),
           // NOTE: Images are now uploaded separately via uploadImagesAfterProductCreation
@@ -38,7 +43,21 @@ class ShopifyMapper {
       }
 
       logger.info(`✅ [MAP_PRODUCT] Successfully mapped product ${product.id} to Shopify format`);
-      logger.info(`📊 [MAP_PRODUCT] Product summary - Variants: ${shopifyProduct.product.variants.length}, Options: ${shopifyProduct.product.options.length}, Metafields: ${shopifyProduct.product.metafields.length}`);
+      logger.info(`📊 [MAP_PRODUCT] Product summary:`, {
+        title: shopifyProduct.product.title,
+        handle: shopifyProduct.product.handle,
+        status: shopifyProduct.product.status,
+        variants_count: shopifyProduct.product.variants.length,
+        options_count: shopifyProduct.product.options.length,
+        metafields_count: shopifyProduct.product.metafields.length,
+        has_vendor: !!shopifyProduct.product.vendor,
+        has_product_type: !!shopifyProduct.product.product_type
+      });
+
+      // Log potential issues
+      if (shopifyProduct.product.variants.length === 0) {
+        logger.warn(`⚠️ [MAP_PRODUCT] Product ${product.id} has no variants - Shopify will create a default variant`);
+      }
       
       return shopifyProduct;
 
@@ -46,6 +65,22 @@ class ShopifyMapper {
       logger.error(`❌ [MAP_PRODUCT] Error mapping product ${product.id} to Shopify:`, error);
       throw new Error(`Failed to map product ${product.id} to Shopify format: ${error.message}`);
     }
+  }
+
+  /**
+   * Generate a URL handle from product title
+   * @param {string} title - Product title
+   * @returns {string} URL-safe handle
+   */
+  static generateHandle(title) {
+    if (!title) return 'product';
+    
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
   }
 
   /**
@@ -457,35 +492,48 @@ class ShopifyMapper {
    * @returns {Object} Validation result
    */
   static validateProductForShopify(product) {
+    logger.info(`🔍 [VALIDATE_PRODUCT] Validating product ${product.id}: "${product.title}"`);
+    
     const errors = [];
     const warnings = [];
 
     // Required fields
     if (!product.title || product.title.trim() === '') {
       errors.push('Product title is required');
+      logger.error(`❌ [VALIDATE_PRODUCT] Missing required field: title`);
     }
 
     // Validate variants
     if (product.variants && product.variants.length > 0) {
+      logger.info(`🔍 [VALIDATE_PRODUCT] Validating ${product.variants.length} variants`);
+      
       product.variants.forEach((variant, index) => {
         if (variant.price === null || variant.price === undefined) {
           errors.push(`Variant ${index + 1}: Price is required`);
+          logger.error(`❌ [VALIDATE_PRODUCT] Variant ${index + 1} missing price`);
         }
         if (variant.price < 0) {
           errors.push(`Variant ${index + 1}: Price cannot be negative`);
+          logger.error(`❌ [VALIDATE_PRODUCT] Variant ${index + 1} has negative price: ${variant.price}`);
         }
       });
+    } else {
+      logger.info(`ℹ️ [VALIDATE_PRODUCT] No variants found - Shopify will create default variant`);
     }
 
     // Validate images
     if (product.images && product.images.length > 0) {
+      logger.info(`🔍 [VALIDATE_PRODUCT] Validating ${product.images.length} images`);
+      
       product.images.forEach((image, index) => {
         if (!image.src) {
           warnings.push(`Image ${index + 1}: Missing source URL`);
+          logger.warn(`⚠️ [VALIDATE_PRODUCT] Image ${index + 1} missing src`);
         } else {
           const fullUrl = this.getFullImageUrl(image.src);
           if (this.isLocalhostUrl(fullUrl)) {
             warnings.push(`Image ${index + 1}: Localhost URLs cannot be accessed by Shopify and will be skipped`);
+            logger.warn(`⚠️ [VALIDATE_PRODUCT] Image ${index + 1} has localhost URL: ${fullUrl}`);
           }
         }
       });
@@ -494,16 +542,30 @@ class ShopifyMapper {
     // Check for recommended fields
     if (!product.description) {
       warnings.push('Product description is recommended');
+      logger.warn(`⚠️ [VALIDATE_PRODUCT] Missing recommended field: description`);
     }
     if (!product.vendor) {
       warnings.push('Product vendor is recommended');
+      logger.warn(`⚠️ [VALIDATE_PRODUCT] Missing recommended field: vendor`);
+    }
+    if (!product.product_type) {
+      warnings.push('Product type is recommended');
+      logger.warn(`⚠️ [VALIDATE_PRODUCT] Missing recommended field: product_type`);
     }
 
-    return {
+    const result = {
       isValid: errors.length === 0,
       errors,
       warnings
     };
+
+    if (result.isValid) {
+      logger.info(`✅ [VALIDATE_PRODUCT] Product ${product.id} validation passed with ${warnings.length} warnings`);
+    } else {
+      logger.error(`❌ [VALIDATE_PRODUCT] Product ${product.id} validation failed with ${errors.length} errors`);
+    }
+
+    return result;
   }
 
   /**
